@@ -1,10 +1,12 @@
 # Gaps
 
-What Market Brief lacked or got wrong that mattered. The daily run logs each gap and bumps its tally; the weekly run promotes any tag seen on 3+ days in two weeks to a **candidate**. Candidates are not work until the owner rules.
+What Market Brief lacked or got wrong that mattered. The daily run logs each gap and bumps its tally. The weekly run marks **candidates** by the rule in README "From gap to candidate": a tag on 3+ trading days in the last 10, or a single valid `MAJOR` line (one that states **Impaired:** and **Evidence:**). Candidates are for owner review only; they authorize no work.
 
-## Tally (last two weeks)
+Log line format: `- date · tag · [MAJOR ·] what was missing. [Impaired: … Evidence: …]`
 
-| Tag | Days | Last seen | Candidate |
+## Tally (last 10 trading days)
+
+| Tag | Days | Last seen | Candidate (rule 1: 3+ days · rule 2: MAJOR) |
 |---|---|---|---|
 | macro-release | 1 | 2026-09-30 | — |
 | consensus | 0 | — | — |

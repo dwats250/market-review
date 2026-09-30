@@ -15,12 +15,12 @@ The one or two claims that held up against every day's attempt to break them, an
 - Opening headlines that held to the close: N of 5
 - Recurring miss:
 
-## 4. Gap tally (last two weeks)
+## 4. Gap tally (last 10 trading days)
 
-| Tag | Days | Candidate? |
-|---|---|---|
+| Tag | Days | MAJOR lines | Candidate? |
+|---|---|---|---|
 
-Candidates (one sentence each on what it would have changed):
+Candidates (rule 1: 3+ days, or rule 2: a valid MAJOR line; see README "From gap to candidate"). One sentence each on what it would have changed and which rule qualified it. For owner review only:
 -
 
 ## 5. Your week

@@ -20,6 +20,7 @@ Times are Pacific (America/Vancouver, UTC−7 all year from 2026). The NYSE clos
 **A. Reconcile the previous entry** (the most recent file under `daily/`):
 - If section 4 has content, or `notes/` holds a file dated that day or later that nobody has reconciled yet, and section 6 is empty: write section 6 (≤ 150 words). Say where the reads agree, where they differ, and what the sources support; correct errors plainly and link the source.
 - Backfill **consensus** in that entry's releases table from today's Macroglide email. It arrives about 2:30 AM PT and recaps the *previous* session: search Gmail with `from:newsletter@macroglide.com newer_than:1d`. Copy numbers only, never its prose. If the email is missing, leave "pending" and say so.
+- If new evidence (the close, the consensus backfill, Dustin's notes) shows a gap in that entry now meets or no longer meets the MAJOR test, add or remove the mark in the entry and in `gaps.md`, with one line saying why.
 - Commit: `Reconcile YYYY-MM-DD`.
 
 **B. Write today's entry** from `templates/daily.md`, at `daily/YYYY/YYYY-MM-DD.md`. If the file already exists (seeded or partly written), fill only its empty sections and keep what is there; don't re-log a gap already listed in it or in `gaps.md`.
@@ -34,6 +35,7 @@ Times are Pacific (America/Vancouver, UTC−7 all year from 2026). The NYSE clos
 - **Section 5, Claude's read** (≤ 150 words): the day's mechanism, written from sources *before* reading any of Dustin's notes for today. Connect today to the open hypotheses when it genuinely bears on one.
 - Leave **section 6** (Reconcile) empty.
 - **Section 7, gaps.** One line each, one tag from: `macro-release`, `consensus`, `breadth`, `concentration`, `rates-vol`, `equity-vol`, `timing`, `prose`, `defect`, `other`. A gap is something the brief lacked or got wrong that mattered today. Also add each gap to the log in `gaps.md` and bump its tally.
+  Mark a gap `MAJOR` only under README "From gap to candidate" rule 2, never for the event's name alone. A MAJOR line must carry **Impaired:** (the interpretation affected) and **Evidence:** (what shows it mattered). If in doubt, leave it unmarked; rule 1 still counts it. Format: `` `tag` · MAJOR · what was missing. Impaired: … Evidence: … ``
 
 Commit: `Daily YYYY-MM-DD`.
 
@@ -43,7 +45,7 @@ Commit: `Daily YYYY-MM-DD`.
 2. Read the week's daily files, any `notes/` and `discussions/` files dated this week, `hypotheses.md` and `gaps.md`.
 3. Write `weekly/YYYY/YYYY-Www.md` from `templates/weekly.md`. It answers one question: **what kept surviving every day's attempt to disprove it?** No chronological recap.
 4. Update `hypotheses.md`: each hypothesis gets this week's status (strengthened / weakened / broke / untested) and the days that decided it. Add a new hypothesis only if the week's evidence clearly proposes one; retire one only after it broke. Keep it to about seven.
-5. Update `gaps.md`: any tag seen on 3+ days in the last two weeks becomes a **candidate**, with one sentence on what it would have changed. Candidates are not work.
+5. Update `gaps.md` by README "From gap to candidate": a tag on 3+ trading days in the last 10 trading days, or any valid MAJOR line (both **Impaired:** and **Evidence:** present), becomes a **candidate**. Give each candidate one sentence on what it would have changed and which rule qualified it. A MAJOR line missing either field is not a candidate; say so. Candidates are for owner review only; they authorize no work.
 6. If Dustin has put a week-in-review in `notes/` (for example a ChatGPT export), reconcile it in the weekly's "Your week" section. Otherwise leave that section for later.
 
 Commit: `Weekly YYYY-Www`.

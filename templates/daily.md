@@ -57,4 +57,5 @@ Brief pages: [premarket](permalink) · [opening structure](permalink) · [last](
 
 ## 7. Gaps
 
+<!-- One line per gap: `tag` · what was missing. Add MAJOR only if it materially changed, constrained or could have reversed today's interpretation; then state Impaired: and Evidence:. See README "From gap to candidate". -->
 -

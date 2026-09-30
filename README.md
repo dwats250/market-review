@@ -31,6 +31,20 @@ ROUTINE.md                     exactly what Claude's scheduled runs do
 5. **Macroglide stays here.** Its figures come from a personal subscription: numbers only, credited, and never copied into the Market Brief page.
 6. **Small.** A daily entry fits on about two phone screens. No numeric scoring until 20 sessions exist.
 
-## From gap to feature
+## From gap to candidate
 
-gap tag in a daily → 3+ days in two weeks → weekly **candidate** → owner ruling → Market Brief PRD.
+This section is the canonical candidate rule; `ROUTINE.md`, `gaps.md` and the templates point here.
+
+A gap becomes a **candidate** when either:
+
+1. the same tag appears on **3+ trading days in the last two weeks** (10 trading days); or
+2. one occurrence is marked **MAJOR** because the missing information materially changed, constrained, or could have reversed that day's market interpretation.
+
+A MAJOR mark:
+
+- is never earned by the event's name alone. CPI, FOMC, payrolls and the like are not automatically MAJOR;
+- must state, in the same gap line, **Impaired:** the interpretation that was affected, and **Evidence:** what shows it mattered (prices, timing, the brief's own words);
+- without both, it is an ordinary gap and counts only toward rule 1;
+- can be added or removed by Dustin, or by a later reconcile when new evidence arrives.
+
+A candidate is for owner review only. It does not authorize product work: gap → candidate → owner ruling → Market Brief PRD → implementation. No numeric scoring, no priority ranking. Context, not authority.
