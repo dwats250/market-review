@@ -2,6 +2,8 @@
 
 Brief pages: [premarket](permalink) · [opening structure](permalink) · [last](permalink)
 
+Publications: N of N expected checkpoints published. Missing or late: none
+
 ## 1. The brief's calls
 
 **Premarket (6:02 AM PT)**
@@ -49,9 +51,16 @@ Brief pages: [premarket](permalink) · [opening structure](permalink) · [last](
 - Got right:
 - Didn't know about:
 
+**Coverage vs control group** (2–5 material drivers only)
+
+| Driver / theme | Brief | Control group | Note |
+|---|---|---|---|
+
 ## 4. Connecting the dots (Dustin)
 
-## 5. Claude's read
+## 5. What is the truth today?
+
+<!-- Provisional and falsifiable, ≤ 150 words: driver → where capital went → broad vs concentrated → unresolved tension → what would change the read. Say "mixed" when it is. -->
 
 ## 6. Reconcile
 

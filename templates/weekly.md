@@ -20,8 +20,17 @@ The one or two claims that held up against every day's attempt to break them, an
 | Tag | Days | MAJOR lines | Candidate? |
 |---|---|---|---|
 
-Candidates (rule 1: 3+ days, or rule 2: a valid MAJOR line; see README "From gap to candidate"). One sentence each on what it would have changed and which rule qualified it. For owner review only:
--
+Candidates (rule 1: 3+ days, or rule 2: a valid MAJOR line; see README "From gap to candidate"). For owner review only; no fixes proposed here. For each:
+
+**`tag` · rule N**
+- Frequency:
+- Changed an interpretation:
+- Where in the cadence it would have helped:
+- Exact missing data:
+- Page or analyst context:
+- Signal/noise cost:
+- Provenance/licensing:
+- Blast radius:
 
 ## 5. Your week
 
