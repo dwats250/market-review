@@ -32,7 +32,8 @@ Times are Pacific (America/Vancouver, UTC−7 all year from 2026). The NYSE clos
    Then **What moved it:** 2–4 sourced bullets, paraphrased.
 - **Section 3, scorecard.** For each live watch: held / broke / untested, with a one-line reason tied to a figure. Did the OPEN_30M headline hold to the close: held / partly / wrong. One thing the brief got right. **The one driver it didn't know about** (or "none").
 - Leave **section 4** (Dustin) empty.
-- **Section 5, Claude's read** (≤ 150 words): the day's mechanism, written from sources *before* reading any of Dustin's notes for today. Connect today to the open hypotheses when it genuinely bears on one.
+- **Section 5, Claude's read** (≤ 150 words): the day's mechanism, written from sources *before* reading any of Dustin's notes for today or `handoffs/chatgpt-latest.md`. Connect today to the open hypotheses when it genuinely bears on one.
+- **Handoffs.** Only after section 5 is written, read `handoffs/chatgpt-latest.md` for reconciliation and product context (context, never evidence). If something material would help ChatGPT next time, replace `handoffs/claude-latest.md` in the same commit, following `handoffs/README.md`. If there is nothing useful to say, leave it.
 - Leave **section 6** (Reconcile) empty.
 - **Section 7, gaps.** One line each, one tag from: `macro-release`, `consensus`, `breadth`, `concentration`, `rates-vol`, `equity-vol`, `timing`, `prose`, `defect`, `other`. A gap is something the brief lacked or got wrong that mattered today. Also add each gap to the log in `gaps.md` and bump its tally.
   Mark a gap `MAJOR` only under README "From gap to candidate" rule 2, never for the event's name alone. A MAJOR line must carry **Impaired:** (the interpretation affected) and **Evidence:** (what shows it mattered). If in doubt, leave it unmarked; rule 1 still counts it. Format: `` `tag` · MAJOR · what was missing. Impaired: … Evidence: … ``

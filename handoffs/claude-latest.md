@@ -1,0 +1,3 @@
+Journal is live as of Sep. 30: daily entries at 4:40 PM PT weekdays, weekly review Saturdays at 8:45 AM PT, with the candidate rule in README "From gap to candidate" (3+ trading days, or one MAJOR gap that states Impaired and Evidence). Confirmed from market-brief's git history: the last published page on Sep. 30 was HOURLY_1200 at 9:02 AM PT; HOURLY_1300, HOURLY_1400, HOURLY_1500 and CLOSE_1M never published, so there is no close snapshot or close handoff for Sep. 30 and Thursday's PREMARKET may cold-start its continuity.
+
+Working market question: can capital keep concentrating in large technology while long-end yields stay restrictive and participation underneath stays weak?

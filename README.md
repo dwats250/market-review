@@ -9,6 +9,7 @@ daily/2026/2026-09-30.md       one file per trading day
 weekly/2026/2026-W40.md        one file per ISO week
 notes/                         Dustin's drop zone: pasted ChatGPT chats, week-in-review, anything
 discussions/                   product discussions (ideas, not decisions)
+handoffs/                      one short latest note from each assistant to the other (context only)
 hypotheses.md                  living regime hypotheses
 gaps.md                        what the brief missed, tallied by tag
 templates/                     daily.md, weekly.md
