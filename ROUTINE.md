@@ -20,6 +20,7 @@ Times are Pacific (America/Vancouver, UTC−7 all year from 2026). The NYSE clos
 **A. Reconcile the previous entry** (the most recent file under `daily/`):
 - If section 4 has content, or `notes/` holds a file dated that day or later that nobody has reconciled yet, and section 6 is empty: write section 6 (≤ 150 words). Say where the reads agree, where they differ, and what the sources support; correct errors plainly and link the source.
 - Backfill **consensus** in that entry's releases table from today's Macroglide email. It arrives about 2:30 AM PT and recaps the *previous* session: search Gmail with `from:newsletter@macroglide.com newer_than:1d`. Copy numbers only, never its prose. If the email is missing, leave "pending" and say so.
+- Backfill any close-table row in that entry marked "unavailable" (data sites post some ETF closes late; RSP on Sep 30) with the settled close, marked `(backfilled YYYY-MM-DD)` in its source cell. Never overwrite a figure that was already there.
 - If new evidence (the close, the consensus backfill, Dustin's notes) shows a gap in that entry now meets or no longer meets the MAJOR test, add or remove the mark in the entry and in `gaps.md`, with one line saying why.
 - Commit: `Reconcile YYYY-MM-DD`.
 
