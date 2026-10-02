@@ -8,7 +8,7 @@ Log line format: `- date · tag · [MAJOR ·] what was missing. [Impaired: … E
 
 | Tag | Days | Last seen | Candidate (rule 1: 3+ days · rule 2: MAJOR) |
 |---|---|---|---|
-| macro-release | 2 | 2026-10-01 | MAJOR logged 2026-09-30 (weekly to confirm rule 2) |
+| macro-release | 3 | 2026-10-02 | MAJOR logged 2026-09-30 and 2026-10-02 (weekly to confirm) |
 | consensus | 0 | — | — |
 | breadth | 0 | — | — |
 | concentration | 0 | — | — |
@@ -16,8 +16,12 @@ Log line format: `- date · tag · [MAJOR ·] what was missing. [Impaired: … E
 | equity-vol | 0 | — | — |
 | timing | 0 | — | — |
 | prose | 1 | 2026-09-30 | — |
-| defect | 2 | 2026-10-01 | — |
+| defect | 3 | 2026-10-02 | — (two kinds: missed publications Sep 30, Oct 1; evidence consistency Oct 2) |
 | other | 1 | 2026-10-01 | — |
+
+**Fix status** (recorded so a fixed gap is not treated as open, and a fix is not treated as proven):
+- `macro-release`: FIX IMPLEMENTED — FORWARD VERIFICATION REQUIRED. market-brief PRs #47 (BLS calendar) and #48 (BLS Employment Situation and CPI actuals), merged Oct 2 after the close. First test: CPI, Oct 14. Not covered: BEA (PCE, GDP), ISM, DOL claims.
+- `defect` (missed publications): FIX IMPLEMENTED — FORWARD VERIFICATION REQUIRED. market-brief PR #46 (scheduler liveness), merged Oct 1. Oct 2 published 9 of 9.
 
 ## Log
 
@@ -30,3 +34,5 @@ Log line format: `- date · tag · [MAJOR ·] what was missing. [Impaired: … E
 - 2026-10-01 · `rates-vol` · Rates block showed only Wednesday's par curve (live yields not collected); the morning spike to a 5.34% 10Y and its retreat, which set the equity path, never reached the page.
 - 2026-10-01 · `macro-release` · ISM manufacturing (prices paid 77.9 from 71.1), jobless claims (197k) and construction spending never reached the brief (BLS 403; ISM and Census not collected).
 - 2026-10-01 · `other` · Crude and DXY not collected: XLE +1.97% appeared without its cause (China fuel-export halt, Brent above $100) or the dollar's +0.65%.
+- 2026-10-02 · `macro-release` · MAJOR · The September jobs report (payrolls +29k vs ~84–90k; −60k revisions; unemployment 4.2%), out at 5:30 AM PT, was absent from the 6:02 premarket. Impaired: the bid in tech and gold was explained as "falling front-end yields in the prior-day curve"; the session was a payrolls repricing (October hike odds ~28% → 12–14%) that partly reversed. Evidence: the release preceded the page by 32 minutes; the page cites only Thursday's curve; the close page lists the release under Events with no figures. Fix landed after the close (PRs #47, #48); forward verification at CPI, Oct 14.
+- 2026-10-02 · `defect` · Evidence consistency: the 7:02 miners-watch verdict "no current GDX print" was carried onto the 11:00, 1:00 PM and close pages, which showed GDX prints (+1.15% vs GLD −0.68% at 12:59). The confirm condition was met on the page's own figures but left "unresolved".
