@@ -12,7 +12,7 @@ Log line format: `- date · tag · [MAJOR ·] what was missing. [Impaired: … E
 | consensus | 0 | — | — |
 | breadth | 0 | — | — |
 | concentration | 0 | — | — |
-| rates-vol | 2 | 2026-10-01 | — |
+| rates-vol | 3 | 2026-10-02 | — |
 | equity-vol | 0 | — | — |
 | timing | 0 | — | — |
 | prose | 1 | 2026-09-30 | — |
@@ -35,4 +35,5 @@ Log line format: `- date · tag · [MAJOR ·] what was missing. [Impaired: … E
 - 2026-10-01 · `macro-release` · ISM manufacturing (prices paid 77.9 from 71.1), jobless claims (197k) and construction spending never reached the brief (BLS 403; ISM and Census not collected).
 - 2026-10-01 · `other` · Crude and DXY not collected: XLE +1.97% appeared without its cause (China fuel-export halt, Brent above $100) or the dollar's +0.65%.
 - 2026-10-02 · `macro-release` · MAJOR · The September jobs report (payrolls +29k vs ~84–90k; −60k revisions; unemployment 4.2%), out at 5:30 AM PT, was absent from the 6:02 premarket. Impaired: the bid in tech and gold was explained as "falling front-end yields in the prior-day curve"; the session was a payrolls repricing (October hike odds ~28% → 12–14%) that partly reversed. Evidence: the release preceded the page by 32 minutes; the page cites only Thursday's curve; the close page lists the release under Events with no figures. Fix landed after the close (PRs #47, #48); forward verification at CPI, Oct 14.
-- 2026-10-02 · `defect` · Evidence consistency: the 7:02 miners-watch verdict "no current GDX print" was carried onto the 11:00, 1:00 PM and close pages, which showed GDX prints (+1.15% vs GLD −0.68% at 12:59). The confirm condition was met on the page's own figures but left "unresolved".
+- 2026-10-02 · `defect` · Evidence consistency: the 7:02 miners-watch verdict "no current GDX print" was carried onto the 11:00, 1:00 PM and close pages, which showed GDX prints (+1.15% vs GLD −0.68% at 12:59). The confirm condition was met on the page's own figures but left "unresolved". The SPY 50DMA watch likewise still read "no close has printed yet" on the close page.
+- 2026-10-02 · `rates-vol` · Rates block showed only Thursday's par curve; the page called the prior-day bull steepener "a friendlier backdrop" all day while yields fell on the payrolls report and the front end closed higher (2Y +5 bp, 10Y +4 bp).
