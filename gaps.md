@@ -8,16 +8,18 @@ Log line format: `- date · tag · [MAJOR ·] what was missing. [Impaired: … E
 
 | Tag | Days | Last seen | Candidate (rule 1: 3+ days · rule 2: MAJOR) |
 |---|---|---|---|
-| macro-release | 3 | 2026-10-02 | MAJOR logged 2026-09-30 and 2026-10-02 (weekly to confirm) |
+| macro-release | 3 | 2026-10-02 | **Candidate** (rules 1 and 2; W40) |
 | consensus | 0 | — | — |
 | breadth | 0 | — | — |
 | concentration | 0 | — | — |
-| rates-vol | 3 | 2026-10-02 | — |
+| rates-vol | 3 | 2026-10-02 | **Candidate** (rule 1; W40) |
 | equity-vol | 0 | — | — |
 | timing | 0 | — | — |
 | prose | 1 | 2026-09-30 | — |
-| defect | 3 | 2026-10-02 | — (two kinds: missed publications Sep 30, Oct 1; evidence consistency Oct 2) |
+| defect | 3 | 2026-10-02 | **Candidate** (rule 1; W40). Two kinds: missed publications Sep 30, Oct 1; evidence consistency Oct 2 |
 | other | 1 | 2026-10-01 | — |
+
+Candidate design questions: `weekly/2026/2026-W40.md` section 4. For owner review only.
 
 **Fix status** (recorded so a fixed gap is not treated as open, and a fix is not treated as proven):
 - `macro-release`: FIX IMPLEMENTED — FORWARD VERIFICATION REQUIRED. market-brief PRs #47 (BLS calendar) and #48 (BLS Employment Situation and CPI actuals), merged Oct 2 after the close. First test: CPI, Oct 14. Not covered: BEA (PCE, GDP), ISM, DOL claims.
