@@ -8,22 +8,22 @@ Log line format: `- date · tag · [MAJOR ·] what was missing. [Impaired: … E
 
 | Tag | Days | Last seen | Candidate (rule 1: 3+ days · rule 2: MAJOR) |
 |---|---|---|---|
-| macro-release | 3 | 2026-10-02 | **Candidate** (rules 1 and 2; W40) |
+| macro-release | 4 | 2026-10-05 | **Candidate** (rules 1 and 2; W40) |
 | consensus | 0 | — | — |
 | breadth | 0 | — | — |
 | concentration | 0 | — | — |
-| rates-vol | 3 | 2026-10-02 | **Candidate** (rule 1; W40) |
+| rates-vol | 4 | 2026-10-05 | **Candidate** (rule 1; W40) |
 | equity-vol | 0 | — | — |
 | timing | 0 | — | — |
 | prose | 1 | 2026-09-30 | — |
-| defect | 3 | 2026-10-02 | **Candidate** (rule 1; W40). Two kinds: missed publications Sep 30, Oct 1; evidence consistency Oct 2 |
+| defect | 4 | 2026-10-05 | **Candidate** (rule 1; W40). Two kinds: missed publications Sep 30, Oct 1, Oct 5; evidence consistency Oct 2, Oct 5 |
 | other | 1 | 2026-10-01 | — |
 
 Candidate design questions: `weekly/2026/2026-W40.md` section 4. For owner review only.
 
 **Fix status** (recorded so a fixed gap is not treated as open, and a fix is not treated as proven):
 - `macro-release`: FIX IMPLEMENTED — FORWARD VERIFICATION REQUIRED. market-brief PRs #47 (BLS calendar) and #48 (BLS Employment Situation and CPI actuals), merged Oct 2 after the close. First test: CPI, Oct 14. Not covered: BEA (PCE, GDP), ISM, DOL claims.
-- `defect` (missed publications): FIX IMPLEMENTED — FORWARD VERIFICATION REQUIRED. market-brief PR #46 (scheduler liveness), merged Oct 1. Oct 2 published 9 of 9.
+- `defect` (missed publications): FIX IMPLEMENTED — FORWARD VERIFICATION REQUIRED. market-brief PR #46 (scheduler liveness), merged Oct 1. Oct 2 published 9 of 9; Oct 5 missed CLOSE_1M (8 of 9).
 
 ## Log
 
@@ -39,3 +39,7 @@ Candidate design questions: `weekly/2026/2026-W40.md` section 4. For owner revie
 - 2026-10-02 · `macro-release` · MAJOR · The September jobs report (payrolls +29k vs ~84–90k; −60k revisions; unemployment 4.2%), out at 5:30 AM PT, was absent from the 6:02 premarket. Impaired: the bid in tech and gold was explained as "falling front-end yields in the prior-day curve"; the session was a payrolls repricing (October hike odds ~28% → 12–14%) that partly reversed. Evidence: the release preceded the page by 32 minutes; the page cites only Thursday's curve; the close page lists the release under Events with no figures. Fix landed after the close (PRs #47, #48); forward verification at CPI, Oct 14.
 - 2026-10-02 · `defect` · Evidence consistency: the 7:02 miners-watch verdict "no current GDX print" was carried onto the 11:00, 1:00 PM and close pages, which showed GDX prints (+1.15% vs GLD −0.68% at 12:59). The confirm condition was met on the page's own figures but left "unresolved". The SPY 50DMA watch likewise still read "no close has printed yet" on the close page.
 - 2026-10-02 · `rates-vol` · Rates block showed only Thursday's par curve; the page called the prior-day bull steepener "a friendlier backdrop" all day while yields fell on the payrolls report and the front end closed higher (2Y +5 bp, 10Y +4 bp).
+- 2026-10-05 · `defect` · CLOSE_1M never published (1:01 PM PT); last page the 12:02 PM PT refresh. First miss since PR #46.
+- 2026-10-05 · `defect` · Evidence consistency: the 7:02 "industrials slip" read (XLI −0.61%) was carried through 12:02, when the page's own table showed XLI +0.33% and all sectors but XLRE up; no SPY print all day.
+- 2026-10-05 · `macro-release` · ISM services (prices 74.0 from 72.6; headline 54.9 from 55.4), out at 7:00 AM PT, never reached the brief (ISM not collected; no synthesis after 7:02).
+- 2026-10-05 · `rates-vol` · Rates block showed only Friday's curve; the 10Y's new 2002 high (~5.31–5.35%) and bear steepening never reached the page.
