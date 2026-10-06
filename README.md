@@ -18,10 +18,10 @@ ROUTINE.md                     exactly what Claude's scheduled runs do
 
 ## Who writes what
 
-- **Claude, weekdays ~4:40 PM PT:** today's entry (the brief's calls and publications, the close, a scorecard with control-group coverage, a provisional "What is the truth today?" read, gaps). It first reconciles the previous entry if Dustin added notes, and backfills consensus figures from the morning's Macroglide recap.
+- **Claude, weekdays ~4:40 PM PT:** today's entry (the brief's calls and publications, the close, a scorecard with control-group coverage, a provisional "What is the truth today?" read, gaps). It first backfills data in the previous entry (consensus figures from the morning's Macroglide recap, late closes) and never reconciles Dustin's or ChatGPT's commentary.
 - **Claude, Saturday ~8:45 AM PT:** the weekly review and updates to `hypotheses.md` and `gaps.md`.
 - **Dustin, any time:** write in section 4 of a daily file, or drop a file in `notes/` named `YYYY-MM-DD-topic.md`. Pasting into the Market Brief Claude Project and asking Claude to file it works too.
-- **On demand:** "reconcile today" (or "this week") in the Project chat.
+- **ChatGPT, after Claude's entry:** section 6 (Reconcile) of each daily, the weekly's "Your week" reconciliation, and any later corrections to interpretation.
 
 ## Rules
 

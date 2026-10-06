@@ -34,7 +34,7 @@ Candidates (rule 1: 3+ days, or rule 2: a valid MAJOR line; see README "From gap
 
 ## 5. Your week
 
-Dustin's week-in-review (or a link to the `notes/` file), then Claude's reconcile.
+Dustin's week-in-review (or a link to the `notes/` file), then ChatGPT's reconciliation.
 
 ## 6. Next week
 
