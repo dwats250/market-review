@@ -8,22 +8,22 @@ Log line format: `- date · tag · [MAJOR ·] what was missing. [Impaired: … E
 
 | Tag | Days | Last seen | Candidate (rule 1: 3+ days · rule 2: MAJOR) |
 |---|---|---|---|
-| macro-release | 5 | 2026-10-06 | **Candidate** (rules 1 and 2; W40) |
+| macro-release | 6 | 2026-10-07 | **Candidate** (rules 1 and 2; W40) |
 | consensus | 0 | — | — |
-| breadth | 0 | — | — |
+| breadth | 1 | 2026-10-07 | — (MAJOR line logged 2026-10-07; weekly to assess) |
 | concentration | 0 | — | — |
-| rates-vol | 5 | 2026-10-06 | **Candidate** (rule 1; W40) |
+| rates-vol | 6 | 2026-10-07 | **Candidate** (rule 1; W40). MAJOR line logged 2026-10-07 |
 | equity-vol | 0 | — | — |
 | timing | 0 | — | — |
 | prose | 1 | 2026-09-30 | — |
-| defect | 5 | 2026-10-06 | **Candidate** (rule 1; W40). Two kinds: missed publications Sep 30, Oct 1, Oct 5; evidence consistency Oct 2, Oct 5, Oct 6 |
-| other | 2 | 2026-10-06 | — |
+| defect | 6 | 2026-10-07 | **Candidate** (rule 1; W40). Two kinds: missed publications Sep 30, Oct 1, Oct 5; evidence consistency Oct 2, Oct 5, Oct 6, Oct 7 |
+| other | 3 | 2026-10-07 | — (3 days; weekly to assess) |
 
 Candidate design questions: `weekly/2026/2026-W40.md` section 4. For owner review only.
 
 **Fix status** (recorded so a fixed gap is not treated as open, and a fix is not treated as proven):
 - `macro-release`: FIX IMPLEMENTED — FORWARD VERIFICATION REQUIRED. market-brief PRs #47 (BLS calendar) and #48 (BLS Employment Situation and CPI actuals), merged Oct 2 after the close. First test: CPI, Oct 14. Not covered: BEA (PCE, GDP, trade), ISM, DOL claims.
-- `defect` (missed publications): FIX IMPLEMENTED — FORWARD VERIFICATION REQUIRED. market-brief PR #46 (scheduler liveness), merged Oct 1. Oct 2 published 9 of 9; Oct 5 missed CLOSE_1M (8 of 9); Oct 6 published 9 of 9.
+- `defect` (missed publications): FIX IMPLEMENTED — FORWARD VERIFICATION REQUIRED. market-brief PR #46 (scheduler liveness), merged Oct 1. Oct 2 published 9 of 9; Oct 5 missed CLOSE_1M (8 of 9); Oct 6 and Oct 7 published 9 of 9.
 
 ## Log
 
@@ -47,3 +47,8 @@ Candidate design questions: `weekly/2026/2026-W40.md` section 4. For owner revie
 - 2026-10-06 · `rates-vol` · Rates block showed only Monday's curve; the 10Y's retreat (−3.6 bp to ~5.275%) never reached the page, which called rate-sensitive strength contrary to the backdrop.
 - 2026-10-06 · `defect` · Evidence consistency: no SPY or QQQ print after 7:02 on any page; the close page marked every watch "horizon passed" without a verdict while its own 12:59 table showed XLU +2.98%, XLF +0.24%, XLB +0.48%.
 - 2026-10-06 · `macro-release` · August trade balance (8:30 ET, −$105.6B, record imports) never reached the brief (BEA/Census not collected).
+- 2026-10-07 · `rates-vol` · MAJOR · Rates block showed only Tuesday's curve ("parallel shift lower"); the 30Y and 10Y made new 24-year highs before the open (10Y ~5.35–5.36% at 8:47 AM ET). Impaired: the 7:02 read that "Falling yields did not support bullion" and that losses were tech trimming. Evidence: GLD −1.67% with yields up; heaviest losses rate-sensitive (XLRE −1.31%, XLI −2.16%, IWM −1.29%) while QQQ matched SPY.
+- 2026-10-07 · `breadth` · MAJOR · No breadth: the 7:02 analysis called the selling "concentrated in the recent winners … not a broad flight to safety". Impaired: the broad-vs-concentrated read, reversed. Evidence: RSP −0.81% vs SPY −0.24%; ~2/3 of issues fell (TheStreet); lab SPX advancers 29.7% at 10:00 ET, 27.5% at close, median −0.80%.
+- 2026-10-07 · `defect` · Evidence consistency: close page left "QQQ keeps trailing SPY" as "horizon passed" while its own 1:00 PM PT ledger showed SPY −0.22%, QQQ −0.21%; XLU/XLRE "not comparable yet" beside 12:59 prints.
+- 2026-10-07 · `macro-release` · FOMC minutes (2:00 ET), EIA crude (10:30 ET) and consumer credit never reached the brief (Fed calendar, EIA not collected).
+- 2026-10-07 · `other` · No news: pre-open Iran/Hormuz headlines lifting oil and long-end yields never reached the brief.
