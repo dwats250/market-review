@@ -1,0 +1,28 @@
+{
+  "_about": "WebFetch policy for call A in scripts/review.py. Edit the domain lists here; no code change is needed. 'example.com' matches that host (and www.example.com); '*.example.com' matches its subdomains. WebSearch cannot be restricted by domain; the leak backstop covers it. The GitHub denies below are also enforced by the script, so removing them here has no effect.",
+  "webfetch_allow": [
+    "treasury.gov", "*.treasury.gov",
+    "cboe.com", "*.cboe.com",
+    "bls.gov", "*.bls.gov",
+    "eia.gov", "*.eia.gov",
+    "federalreserve.gov", "*.federalreserve.gov",
+    "bea.gov", "*.bea.gov",
+    "census.gov", "*.census.gov",
+    "ismworld.org", "*.ismworld.org",
+    "stockanalysis.com",
+    "prnewswire.com", "*.prnewswire.com",
+    "reuters.com", "*.reuters.com",
+    "marketwatch.com", "*.marketwatch.com",
+    "cnbc.com", "*.cnbc.com",
+    "thestreet.com", "*.thestreet.com",
+    "investrade.com",
+    "tradingeconomics.com",
+    "finance.yahoo.com",
+    "fxstreet.com", "*.fxstreet.com"
+  ],
+  "webfetch_deny": [
+    "github.com", "*.github.com",
+    "github.io", "*.github.io",
+    "githubusercontent.com", "*.githubusercontent.com"
+  ]
+}
