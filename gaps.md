@@ -8,22 +8,22 @@ Log line format: `- date · tag · [MAJOR ·] what was missing. [Impaired: … E
 
 | Tag | Days | Last seen | Candidate (rule 1: 3+ days · rule 2: MAJOR) |
 |---|---|---|---|
-| macro-release | 4 | 2026-10-05 | **Candidate** (rules 1 and 2; W40) |
+| macro-release | 5 | 2026-10-06 | **Candidate** (rules 1 and 2; W40) |
 | consensus | 0 | — | — |
 | breadth | 0 | — | — |
 | concentration | 0 | — | — |
-| rates-vol | 4 | 2026-10-05 | **Candidate** (rule 1; W40) |
+| rates-vol | 5 | 2026-10-06 | **Candidate** (rule 1; W40) |
 | equity-vol | 0 | — | — |
 | timing | 0 | — | — |
 | prose | 1 | 2026-09-30 | — |
-| defect | 4 | 2026-10-05 | **Candidate** (rule 1; W40). Two kinds: missed publications Sep 30, Oct 1, Oct 5; evidence consistency Oct 2, Oct 5 |
-| other | 1 | 2026-10-01 | — |
+| defect | 5 | 2026-10-06 | **Candidate** (rule 1; W40). Two kinds: missed publications Sep 30, Oct 1, Oct 5; evidence consistency Oct 2, Oct 5, Oct 6 |
+| other | 2 | 2026-10-06 | — |
 
 Candidate design questions: `weekly/2026/2026-W40.md` section 4. For owner review only.
 
 **Fix status** (recorded so a fixed gap is not treated as open, and a fix is not treated as proven):
-- `macro-release`: FIX IMPLEMENTED — FORWARD VERIFICATION REQUIRED. market-brief PRs #47 (BLS calendar) and #48 (BLS Employment Situation and CPI actuals), merged Oct 2 after the close. First test: CPI, Oct 14. Not covered: BEA (PCE, GDP), ISM, DOL claims.
-- `defect` (missed publications): FIX IMPLEMENTED — FORWARD VERIFICATION REQUIRED. market-brief PR #46 (scheduler liveness), merged Oct 1. Oct 2 published 9 of 9; Oct 5 missed CLOSE_1M (8 of 9).
+- `macro-release`: FIX IMPLEMENTED — FORWARD VERIFICATION REQUIRED. market-brief PRs #47 (BLS calendar) and #48 (BLS Employment Situation and CPI actuals), merged Oct 2 after the close. First test: CPI, Oct 14. Not covered: BEA (PCE, GDP, trade), ISM, DOL claims.
+- `defect` (missed publications): FIX IMPLEMENTED — FORWARD VERIFICATION REQUIRED. market-brief PR #46 (scheduler liveness), merged Oct 1. Oct 2 published 9 of 9; Oct 5 missed CLOSE_1M (8 of 9); Oct 6 published 9 of 9.
 
 ## Log
 
@@ -43,3 +43,7 @@ Candidate design questions: `weekly/2026/2026-W40.md` section 4. For owner revie
 - 2026-10-05 · `defect` · Evidence consistency: the 7:02 "industrials slip" read (XLI −0.61%) was carried through 12:02, when the page's own table showed XLI +0.33% and all sectors but XLRE up; no SPY print all day.
 - 2026-10-05 · `macro-release` · ISM services (prices 74.0 from 72.6; headline 54.9 from 55.4), out at 7:00 AM PT, never reached the brief (ISM not collected; no synthesis after 7:02).
 - 2026-10-05 · `rates-vol` · Rates block showed only Friday's curve; the 10Y's new 2002 high (~5.31–5.35%) and bear steepening never reached the page.
+- 2026-10-06 · `other` · No news search: the Google–Constellation nuclear deal (9:11 ET, before the 7:02 page) behind XLU's +2.98% never reached the brief, which read the move as rate-sensitive laggard catch-up.
+- 2026-10-06 · `rates-vol` · Rates block showed only Monday's curve; the 10Y's retreat (−3.6 bp to ~5.275%) never reached the page, which called rate-sensitive strength contrary to the backdrop.
+- 2026-10-06 · `defect` · Evidence consistency: no SPY or QQQ print after 7:02 on any page; the close page marked every watch "horizon passed" without a verdict while its own 12:59 table showed XLU +2.98%, XLF +0.24%, XLB +0.48%.
+- 2026-10-06 · `macro-release` · August trade balance (8:30 ET, −$105.6B, record imports) never reached the brief (BEA/Census not collected).
