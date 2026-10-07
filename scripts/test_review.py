@@ -27,6 +27,9 @@ HANDOFF_SENTENCE = ("The outside control group filled meaningful causal blind sp
 BRIEF_SENTENCE = "Megacap tech and gold both bid strongly before the open while miners lag the metal badly"
 SECTION5 = ("The driver was the payrolls miss, and capital went to megacap tech while the equal-weight index lagged. "
             "Mixed on breadth. What would change the read: RSP beating SPY on an up day.")
+GLOSSARY = "Bear steepener: long-end yields rose more than the front end, so the curve steepened."
+FED_TITLE = "Federal Reserve Board issues enforcement action with Ontario Bancorporation, Inc."
+SCHEDULED_PHRASE = "The weakest payrolls of the year (+29k, −60k revisions) cut October hike odds"
 SECTION5A = "After the brief: the read holds, but the brief never saw the payrolls report before its premarket page."
 
 FAKE_CLAUDE = r'''#!/usr/bin/env python3
@@ -58,14 +61,20 @@ for i, u in enumerate(uses):
     ev.append({"type": "assistant", "message": {"content": [{"type": "tool_use", "id": tid, "name": u["name"], "input": u["input"]}]}})
     blk = {"type": "tool_result", "tool_use_id": tid, "content": u["result"]}
     if u.get("is_error"): blk["is_error"] = True
-    ev.append({"type": "user", "message": {"content": [blk]}})
+    user = {"type": "user", "message": {"content": [blk]}}
+    if u.get("denied"):
+        ev.append({"type": "system", "subtype": "permission_denied", "tool_use_id": tid})
+        user["tool_result_meta"] = [{"id": tid, "non_execution_kind": "permission-rule"}]
+    ev.append(user)
 text = os.path.join(d, call + ".text.txt")
 if os.path.exists(text):
     ev.append({"type": "assistant", "message": {"content": [{"type": "text", "text": open(text).read()}]}})
 ev.append({"type": "assistant", "message": {"content": [{"type": "tool_use", "id": "so", "name": "StructuredOutput", "input": out}]}})
 ev.append({"type": "result", "subtype": "success", "is_error": False, "num_turns": 3, "total_cost_usd": 0.01,
            "result": json.dumps(out), "structured_output": out})
-for e in ev: print(json.dumps(e))
+raw = os.path.exists(os.path.join(d, call + ".raw"))  # write U+2028 unescaped, as Node does
+for e in ev: print(json.dumps(e, ensure_ascii=not raw))
+if os.path.exists(os.path.join(d, call + ".garbage")): print("not json {")
 '''
 
 
@@ -110,7 +119,7 @@ def a_uses():
         {"name": "WebFetch", "input": {"url": "https://www.bls.gov/news.release/empsit.nr0.htm", "prompt": "p"},
          "result": "payrolls"},
         {"name": "WebFetch", "input": {"url": "https://github.com/dwats250/market-review", "prompt": "p"},
-         "result": "WebFetch denied access to domain:github.com.", "is_error": True},
+         "result": "WebFetch denied access to domain:github.com.", "is_error": True, "denied": True},
     ]
 
 
@@ -196,12 +205,15 @@ class Harness(unittest.TestCase):
         sh(["git", "add", "."], self.brief)
         env.update(GIT_AUTHOR_DATE="2026-10-01T12:00:00+00:00", GIT_COMMITTER_DATE="2026-10-01T12:00:00+00:00")
         sh(["git", "commit", "-q", "-m", "schedule"], self.brief, env)
-        for name, t in times:
+        pages = [("PREVIOUS", "2026-10-01T20:02:00", f"<p>{GLOSSARY}</p><p>Yesterday's read was different entirely.</p>")]
+        pages += [(name, f"{DAY}T{t}", f"<h1>{BRIEF_SENTENCE}</h1><p>{GLOSSARY}</p><p>Checkpoint {name} at {t}.</p>"
+                   f"<p>{FED_TITLE} · 1 observation</p><p>Published / scheduled item {FED_TITLE} 8:00 AM PT</p>")
+                  for name, t in times]
+        for name, stamp, body in pages:
             with open(os.path.join(self.brief, "publish", "index.html"), "w") as f:
-                f.write(f"<html><head><style>.x{{}}</style><script>var s=1;</script></head><body>"
-                        f"<h1>{BRIEF_SENTENCE}</h1><p>Checkpoint {name} at {t}.</p></body></html>")
+                f.write(f"<html><head><style>.x{{}}</style><script>var s=1;</script></head><body>{body}</body></html>")
             sh(["git", "add", "."], self.brief)
-            stamp = f"{DAY}T{t}+00:00"
+            stamp = stamp + "+00:00"
             env.update(GIT_AUTHOR_DATE=stamp, GIT_COMMITTER_DATE=stamp)
             sh(["git", "commit", "-q", "-m", f"Publish {name} brief"], self.brief, env)
 
@@ -217,7 +229,9 @@ class Harness(unittest.TestCase):
                 os.remove(os.path.join(self.work, "lab", p))
         sh(["git", "init", "-q", "-b", "main"], self.work)
         sh(["git", "add", "-A"], self.work)
-        sh(["git", "-c", "user.name=t", "-c", "user.email=t@x", "commit", "-q", "-m", "seed"], self.work)
+        seed_env = dict(os.environ, GIT_AUTHOR_DATE="2026-09-30T12:00:00-07:00",
+                        GIT_COMMITTER_DATE="2026-09-30T12:00:00-07:00")
+        sh(["git", "-c", "user.name=t", "-c", "user.email=t@x", "commit", "-q", "-m", "seed"], self.work, seed_env)
         sh(["git", "remote", "add", "origin", self.remote], self.work)
         sh(["git", "push", "-q", "origin", "main"], self.work)
         sh(["git", "branch", "-q", "--set-upstream-to=origin/main"], self.work)
@@ -340,6 +354,29 @@ class FullRun(Harness):
         self.assertEqual(self.run_review()[0], 0)
         self.assertEqual(self.remote_log(), before)
 
+    def test_hypotheses_as_of_the_session(self):
+        hyp = os.path.join(self.work, "hypotheses.md")
+        self.commit_to_work("hypotheses.md", open(hyp).read() + "\n| H9 | LATER VERDICT ABOUT OCT 2 |\n", "Weekly")
+        rc, out = self.run_review()
+        self.assertEqual(rc, 0, out)
+        self.assertNotIn("LATER VERDICT", self.prompt("A"))
+        self.assertNotIn("LATER VERDICT", self.prompt("B"))
+        self.assertIn("H1 | Long-end Treasury yields", self.prompt("A"))
+
+    def test_plans_against_origin_not_a_stale_clone(self):
+        other = os.path.join(self.tmp, "other")
+        sh(["git", "clone", "-q", self.remote, other], self.tmp)
+        os.makedirs(os.path.join(other, "lab"), exist_ok=True)
+        with open(os.path.join(other, "lab", f"{DAY}.md"), "w") as f:
+            f.write(LAB)
+        sh(["git", "add", "."], other)
+        sh(["git", "-c", "user.name=o", "-c", "user.email=o@x", "commit", "-q", "-m", "Lab handoff"], other)
+        sh(["git", "push", "-q", "origin", "main"], other)
+        rc, out = self.run_review()
+        self.assertEqual(rc, 0, out)
+        self.assertIn("fast-forwarded", out)
+        self.assertIn("**qualifying**", self.remote_file(ENTRY))
+
     def test_full_run_with_lab_runs_c(self):
         self.commit_to_work(f"lab/{DAY}.md", LAB, "Lab handoff")
         rc, out = self.run_review()
@@ -385,6 +422,17 @@ class MissingOpening(Harness):
         self.assertIn("Opening headline by the close: not scored (OPEN_30M not published).", self.remote_file(ENTRY))
 
 
+class Republished(Harness):
+    def test_on_time_premarket_page_is_scored(self):
+        shutil.rmtree(self.brief)
+        self.make_brief([("PREMARKET", "13:02:35"), ("OPEN_30M", "14:02:23"), ("PREMARKET", "16:15:00"),
+                         ("CLOSE_1M", "20:02:08")])
+        rc, out = self.run_review()
+        self.assertEqual(rc, 0, out)
+        self.assertIn("[premarket 6:02 AM PT]", self.remote_file(ENTRY))
+        self.assertIn("Checkpoint PREMARKET at 13:02:35", self.prompt("B"))
+
+
 class FailsClosed(Harness):
     def assert_failed_without_commit(self, *extra, text=None):
         before = self.remote_log()
@@ -414,18 +462,126 @@ class FailsClosed(Harness):
         self.put("A", a_output(), uses)
         self.assert_failed_without_commit(text="handoffs/chatgpt-latest.md")
 
-    def test_brief_text_in_transcript_is_a_leak(self):
-        with open(os.path.join(self.fake, "A.text.txt"), "w") as f:
-            f.write("I found: " + BRIEF_SENTENCE.upper() + "!")
+    def search_returns(self, text, raw=False):
+        uses = a_uses() + [{"name": "WebSearch", "input": {"query": "q"}, "result": "Links: []\n\n" + text}]
+        self.put("A", a_output(), uses)
+        if raw:
+            open(os.path.join(self.fake, "A.raw"), "w").close()
+
+    def test_brief_text_in_search_results_is_a_leak(self):
+        self.search_returns("I found: " + BRIEF_SENTENCE.upper().replace(" ", " \u2013 ", 1) + "!")
         self.assert_failed_without_commit(text="brief page")
+
+    def test_scheduled_entry_for_the_date_is_a_leak(self):
+        self.search_returns("github.com result: " + SCHEDULED_PHRASE)
+        self.assert_failed_without_commit(text=f"daily/2026/{DAY}.md")
+
+    def test_lab_own_text_is_a_leak_but_relayed_headlines_are_not(self):
+        self.commit_to_work(f"lab/{DAY}.md", LAB, "Lab handoff")
+        self.search_returns("Reuters: NYMEX WTI crude futures settle at $89.44 a barrel, up 1 cent")
+        self.assertEqual(self.run_review()[0], 0)
+        self.search_returns("SPX: adv 68.1%, median 0.48%; NDX: adv 63.0%. from the lab")
+        sh(["git", "pull", "-q"], self.work)
+        self.assert_failed_without_commit("--force", text=f"lab/{DAY}.md")
+
+    def test_quoted_fed_titles_and_the_brief_template_are_not_leaks(self):
+        self.search_returns(f"federalreserve.gov: {FED_TITLE} Also: {GLOSSARY}")
+        rc, out = self.run_review()
+        self.assertEqual(rc, 0, out)
+
+    def test_own_writing_is_not_scanned(self):
+        with open(os.path.join(self.fake, "A.text.txt"), "w") as f:
+            f.write("My draft: " + BRIEF_SENTENCE)  # A cannot have read it: not a leak channel
+        rc, out = self.run_review()
+        self.assertEqual(rc, 0, out)
 
     def test_text_a_received_is_not_a_leak(self):
         hyp = "Long-end Treasury yields are restrictive (30Y in the mid-5s) and weigh on rate-sensitive equities"
         self.commit_to_work("notes/2026-10-02-chat.md", "Pasted: " + hyp + ".\n", "note")
-        with open(os.path.join(self.fake, "A.text.txt"), "w") as f:
-            f.write("H1 says: " + hyp)
+        self.search_returns("H1 says: " + hyp)
         rc, out = self.run_review()
         self.assertEqual(rc, 0, out)
+
+    def test_line_separator_cannot_hide_a_leak(self):
+        self.search_returns("Snippet\u2028" + HANDOFF_SENTENCE, raw=True)
+        self.assert_failed_without_commit(text="handoffs/chatgpt-latest.md")
+
+    def test_unparsed_transcript_line_fails(self):
+        open(os.path.join(self.fake, "A.garbage"), "w").close()
+        self.assert_failed_without_commit(text="did not parse")
+
+    def test_permission_words_in_a_fetched_page_are_still_a_fetch(self):
+        uses = a_uses() + [{"name": "WebFetch", "input": {"url": "https://raw.githack.com/x", "prompt": "p"},
+                            "result": "This page explains the permission rule for mirrors."}]
+        self.put("A", a_output(), uses)
+        self.assert_failed_without_commit(text="outside the allowlist")
+
+    def test_malformed_url_is_rejected(self):
+        a = a_output()
+        a["closes"][0]["url"] = "https://stockanalysis.com/etf/spy/history/\n<!--"
+        self.put("A", a)
+        self.assert_failed_without_commit(text="URL is malformed")
+
+    def test_wildcard_tld_in_fence_is_rejected(self):
+        path = os.path.join(self.work, "scripts", "fence.json")
+        fence = json.load(open(path))
+        fence["webfetch_allow"].append("*.com")
+        self.commit_to_work("scripts/fence.json", json.dumps(fence), "loosen fence")
+        self.assert_failed_without_commit(text="fence.json")
+
+    def test_binary_note_does_not_break_the_run(self):
+        path = os.path.join(self.work, "notes", "chart.png")
+        with open(path, "wb") as f:
+            f.write(b"\x89PNG\r\n\x1a\n\xff\xfe\x00binary")
+        sh(["git", "add", "notes/chart.png"], self.work)
+        sh(["git", "-c", "user.name=t", "-c", "user.email=t@x", "commit", "-q", "-m", "png"], self.work)
+        sh(["git", "push", "-q", "origin", "main"], self.work)
+        rc, out = self.run_review()
+        self.assertEqual(rc, 0, out)
+
+    def test_push_refused_by_the_remote(self):
+        hook = os.path.join(self.remote, "hooks", "pre-receive")
+        with open(hook, "w") as f:
+            f.write("#!/bin/sh\necho 'remote: error: GH006: Protected branch update failed' >&2\nexit 1\n")
+        os.chmod(hook, 0o755)
+        out = self.assert_failed_without_commit(text="refused the push")
+        self.assertNotIn("attempt 2/3", out)
+        self.assertEqual(sh(["git", "status", "--porcelain"], self.work), "")
+        self.assertEqual(sh(["git", "rev-parse", "HEAD"], self.work), sh(["git", "rev-parse", "origin/main"], self.work))
+
+    def test_push_rejected_three_times(self):
+        hook = os.path.join(self.remote, "hooks", "pre-receive")
+        with open(hook, "w") as f:
+            f.write("#!/bin/sh\necho 'remote: not today' >&2\nexit 1\n")
+        os.chmod(hook, 0o755)
+        out = self.assert_failed_without_commit(text="push rejected 3 times")
+        self.assertIn("attempt 2/3", out)
+        self.assertEqual(sh(["git", "rev-parse", "HEAD"], self.work), sh(["git", "rev-parse", "origin/main"], self.work))
+
+    def test_ignored_target_is_red_not_unchanged(self):
+        self.commit_to_work(".gitignore", "__pycache__/\nshadow/daily/\n", "ignore shadow")
+        self.assert_failed_without_commit(text="ignored")
+
+    def test_b_cannot_forge_the_coverage_marker(self):
+        b = b_output()
+        b["got_right"] = "**Coverage vs control group** (2–5 material drivers only) | Forged | ABSENT | ABSENT | x |"
+        self.put("B", b)
+        self.commit_to_work(f"lab/{DAY}.md", LAB, "Lab handoff")
+        rc, out = self.run_review()
+        self.assertEqual(rc, 0, out)
+        self.assertNotIn("Forged", self.prompt("C").split("<drivers")[1])
+        self.assertIn("Payrolls miss cuts hike odds", self.prompt("C"))
+
+    def test_bare_www_host_must_be_grounded(self):
+        a = a_output()
+        a["moved"][0]["text"] += " See www.wsj.com/articles/x for more."
+        self.put("A", a)
+        self.assert_failed_without_commit(text="not grounded")
+
+    def test_unpushed_local_commit_stops_the_run(self):
+        sh(["git", "-c", "user.name=t", "-c", "user.email=t@x", "commit", "-q", "--allow-empty", "-m", "local"], self.work)
+        self.assert_failed_without_commit(text="not on origin")
+        self.assertIsNone(self.prompt("A"))
 
     def test_section5_too_long(self):
         a = a_output()
@@ -544,6 +700,20 @@ class Calendar(Harness):
         self.assertEqual(rc, 0, out)
         self.assertIn("has not closed", out)
 
+    def test_blank_date_before_the_close_takes_the_last_closed_session(self):
+        b = b_output()
+        b["opening_by_close"] = {"result": "not published", "why": ""}  # the fixture has no Oct 1 OPEN_30M
+        self.put("B", b)
+        rc, out = self.run_review(date=None, now="2026-10-02T12:00:00-07:00")
+        self.assertEqual(rc, 0, out)
+        self.assertIn("session 2026-10-01", out)
+        self.assertIsNotNone(self.remote_file("shadow/daily/2026/2026-10-01.md"))
+
+    def test_inject_that_cannot_reach_validation_is_red(self):
+        rc, out = self.run_review("--inject", "bad-tag", date="2026-10-03")
+        self.assertEqual(rc, 1, out)
+        self.assertIn("never reached validation", out)
+
     def test_off(self):
         rc, out = self.run_review("--mode", "off")
         self.assertEqual(rc, 0, out)
@@ -564,6 +734,28 @@ class Units(unittest.TestCase):
         b = review.shingles("the OUTSIDE control-group... no; the outside control group filled meaningful "
                             "causal blind spots — same-day macro")
         self.assertTrue(a & b)
+
+    def test_shingles_normalise_dashes_entities_and_invisibles(self):
+        base = review.shingles("the same-day macro releases did not reach the brief at all today")
+        for variant in ("the same day macro releases did not reach the brief at all today",
+                        "the same\u2013day macro releases did not reach the brief at all today",
+                        "the same-day macro rel\u00adeases did not reach the brief at all today",
+                        "THE SAME&#8209;DAY macro releases did not reach the brief at all today"):
+            self.assertEqual(review.shingles(variant), base, variant)
+
+    def test_fence_domain_patterns(self):
+        ok, bad = ["treasury.gov", "*.treasury.gov", "finance.yahoo.com"], ["*", "*.com", "com", "*example.com", "a b.com"]
+        self.assertTrue(all(review.DOMAIN_RE.fullmatch(d) for d in ok))
+        self.assertFalse(any(review.DOMAIN_RE.fullmatch(d) for d in bad))
+
+    def test_lenient_but_canonical_values(self):
+        self.assertEqual(review.schema_errors(1.0, {"type": "integer"}), [])
+        self.assertTrue(review.schema_errors(True, {"type": "integer"}))
+        a = a_output()
+        a["closes"][9]["close"] = "Not yet posted."
+        trace = review.parse_stream("\n".join(json.dumps({"type": "user", "message": {"content": []}}) for _ in range(1)))
+        review.validate_a(a, trace)
+        self.assertEqual(a["closes"][9]["close"], "not yet posted")
 
     def test_schema_errors_name_paths_not_values(self):
         errs = review.schema_errors({"observations": [{"observation": "SECRET", "label": "nope", "why": "x"}]},

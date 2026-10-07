@@ -2,7 +2,8 @@ name: review
 
 # The Market Review writer. Actions owns the schedule, checkout, validation, commit, push and
 # retries; scripts/review.py calls Claude only to analyse. Phase 2a: shadow entries only.
-# Pause with the Actions variable REVIEW_MODE=off. No artifacts: this repository is public.
+# Pause everything (schedules and dispatches) with the Actions variable REVIEW_MODE=off.
+# No artifacts: this repository is public.
 
 on:
   schedule:
@@ -31,9 +32,11 @@ on:
 permissions:
   contents: write
 
+# A newer run never cancels one that is mid-analysis or mid-push. GitHub keeps only one *pending*
+# run per group, though: dispatch test runs one at a time, or a queued one is replaced.
 concurrency:
   group: review
-  cancel-in-progress: false   # a newer run must never cancel one that is mid-analysis or mid-push
+  cancel-in-progress: false
 
 jobs:
   review:
@@ -41,6 +44,8 @@ jobs:
     timeout-minutes: 30
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0   # reruns by date read hypotheses.md as it stood on that session
 
       - uses: actions/setup-node@v4
         with:
@@ -60,7 +65,9 @@ jobs:
           INPUT_FORCE: ${{ inputs.force }}
           INPUT_INJECT: ${{ inputs.inject }}
         run: |
-          if [ "$GITHUB_EVENT_NAME" = "workflow_dispatch" ]; then
+          if [ "$REVIEW_MODE" = "off" ]; then
+            mode=off
+          elif [ "$GITHUB_EVENT_NAME" = "workflow_dispatch" ]; then
             mode="$INPUT_MODE"
           else
             mode="${REVIEW_MODE:-shadow}"

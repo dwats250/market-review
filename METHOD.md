@@ -17,7 +17,7 @@ You never see Market Brief, the product the journal reviews. That is deliberate:
 - The session date and weekday, the NYSE session hours for that date (regular or early close), and the run time in Pacific time.
 - `hypotheses.md`, the journal's living regime hypotheses.
 - WebSearch, and WebFetch on an allowlist of official-data and news domains. A refused or failed fetch means that source was not reached: record it by name only, never by URL ("BLS (403)"), in the row's `note` or in `control_not_reached`, and move on.
-- Return only URLs you fetched or saw in your own search results, anywhere in your output, notes and text included. The one URL you may fill in yourself is the Treasury file below (its month), to fetch it. The script checks every URL and fails the run on any it can't match.
+- You may fetch any allowlisted page directly, including the source pages listed below. But return only URLs you fetched successfully or saw in your own search results, anywhere in your output, notes and text included. The script checks every URL and fails the run on any it can't match.
 - Don't search for or open Market Brief, Market Lab or this journal (its entries, notes or handoffs), and if a search result shows one, ignore it and don't cite it. Your read has to stay blind, and the script fails the run if your transcript overlaps their text.
 
 ### Clocks
@@ -29,8 +29,8 @@ You never see Market Brief, the product the journal reviews. That is deliberate:
 
 ### Sources
 
-- Official data first: the Treasury daily par yield curve XML for 10Y, 30Y and 2s10s (`https://home.treasury.gov/resource-center/data-chart-center/interest-rates/pages/xml?data=daily_treasury_yield_curve&field_tdr_date_value_month=YYYYMM`); Cboe for VIX; the issuing agency for release actuals (BLS, BEA, Census, Conference Board, ISM headline, EIA, Fed).
-- Reputable close reports for the rest (the ETFs, GLD, WTI, DXY).
+- Official data first: the Treasury daily par yield curve XML for 10Y, 30Y and 2s10s (`https://home.treasury.gov/resource-center/data-chart-center/interest-rates/pages/xml?data=daily_treasury_yield_curve&field_tdr_date_value_month=YYYYMM`); Cboe for VIX (`https://cdn.cboe.com/api/global/us_indices/daily_prices/VIX_History.csv`); the issuing agency for release actuals (BLS, BEA, Census, Conference Board, ISM headline, EIA, Fed), such as BLS's release pages (`https://www.bls.gov/news.release/empsit.nr0.htm`, `cpi.nr0.htm`).
+- Reputable close reports for the rest: for the ETFs, stockanalysis's history pages (`https://stockanalysis.com/etf/spy/history/`, and the same for qqq, rsp, iwm, gld); WTI and DXY from a reputable close report.
 - News only to explain why. Paraphrase it and link it; never paste it.
 
 ### Close table (`closes`)
@@ -70,7 +70,7 @@ Today's scheduled US releases. An empty list means there were none.
 
 ### Section 5: What is the truth today? (`section5`)
 
-Write it last, from the evidence above. One paragraph, at most 150 words. It is frozen once returned: later calls compare against it but never change it.
+Write it last, from the evidence above. One paragraph: aim for 100–130 words; the script rejects more than 150. It is frozen once returned: later calls compare against it but never change it.
 - A provisional, falsifiable read in this order: the driver → where capital went → broad vs concentrated → the unresolved tension → what would change the read.
 - Don't force certainty; say "mixed" when the evidence is.
 - Connect to the open hypotheses in `hypotheses.md`, by number, when today's evidence genuinely bears on one.
@@ -145,7 +145,7 @@ A gap is something the brief lacked or got wrong that mattered today. Keep each 
 ### After the Brief (`section5a`)
 
 The journal's daily read, "What is the truth today?", written now that you know the brief and the scorecard. The evidence call wrote its own read without seeing the brief; you don't see it, and yours is compared with it afterwards to learn what seeing the brief changes. Write your own; don't try to guess or match it.
-- One paragraph, at most 150 words, from the evidence above.
+- One paragraph, from the evidence above: aim for 100–130 words; the script rejects more than 150.
 - A provisional, falsifiable read in this order: the driver → where capital went → broad vs concentrated → the unresolved tension → what would change the read.
 - Don't force certainty; say "mixed" when the evidence is.
 - Connect to the open hypotheses in `hypotheses.md`, by number, when today's evidence genuinely bears on one.

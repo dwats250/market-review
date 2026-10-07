@@ -30,13 +30,16 @@ import subprocess
 import sys
 import tempfile
 import time
+import unicodedata
 from datetime import date as Date
 from datetime import datetime, timedelta, timezone
 from urllib.parse import quote, urlparse
 from zoneinfo import ZoneInfo
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-PT = ZoneInfo("America/Vancouver")  # UTC-7 all year from 2026 (ROUTINE.md)
+# Pacific is America/Vancouver, UTC-7 all year from 2026 (ROUTINE.md). A fixed offset, so the result
+# never depends on whether a host's tzdata already knows about BC's permanent daylight time.
+PT = timezone(timedelta(hours=-7), "PT")
 ET = ZoneInfo("America/New_York")
 
 BRIEF_URL = os.environ.get("REVIEW_BRIEF_URL", "https://github.com/dwats250/market-brief")
@@ -53,9 +56,9 @@ GITHUB_DENY = ["github.com", "*.github.com", "github.io", "*.github.io",
                "githubusercontent.com", "*.githubusercontent.com"]
 
 CALL_LIMITS = {  # seconds, max turns; the job's 30-minute timeout covers all three plus setup
-    "A": (840, 80),
-    "B": (420, 8),
-    "C": (240, 8),
+    "A": (1020, 80),  # web research; the slow one
+    "B": (300, 8),    # one structured answer, no tools
+    "C": (180, 8),
 }
 
 CLOSE_IDS = ["SPY", "QQQ", "RSP", "IWM", "10Y", "30Y", "2s10s", "VIX", "GLD", "WTI", "DXY"]
@@ -100,6 +103,15 @@ def read(path):
         with open(path, encoding="utf-8") as f:
             return f.read()
     except FileNotFoundError:
+        return None
+
+
+def read_text(path):
+    """Any file as text, undecodable bytes replaced: notes/ may hold anything."""
+    try:
+        with open(path, encoding="utf-8", errors="replace") as f:
+            return f.read()
+    except (FileNotFoundError, IsADirectoryError):
         return None
 
 
@@ -223,8 +235,12 @@ def page_text(raw):
 
 
 def run_git(args, cwd, check=True, timeout=300):
-    p = subprocess.run(["git", *args], cwd=cwd, capture_output=True, text=True, timeout=timeout,
-                       env={**os.environ, "GIT_TERMINAL_PROMPT": "0", "GIT_LFS_SKIP_SMUDGE": "1"})
+    try:
+        p = subprocess.run(["git", *args], cwd=cwd, capture_output=True, text=True, timeout=timeout,
+                           env={**os.environ, "GIT_TERMINAL_PROMPT": "0", "GIT_LFS_SKIP_SMUDGE": "1"})
+    except subprocess.TimeoutExpired:
+        raise ReviewError(f"git {args[0]} timed out after {timeout} s"
+                          + ("; the remote may still have accepted it" if args[0] == "push" else ""))
     if check and p.returncode != 0:
         raise ReviewError(f"git {args[0]} failed (rc={p.returncode})")
     return p
@@ -271,18 +287,25 @@ def fetch_brief(day, work):
         if c["sha"] not in texts:
             raw = run_git(["show", f"{c['sha']}:{BRIEF_PAGE}"], cwd=path).stdout
             texts[c["sha"]] = page_text(raw)
-    rev = run_git(["rev-list", "-1", f"--before={end.isoformat()}", "HEAD"], cwd=path).stdout.strip()
+    # The last page published before this date: its text is the Brief's static template (headings,
+    # glossary, ledger boilerplate), which the leak backstop must not count as today's Brief.
+    prev = run_git(["log", "-1", "--format=%H", f"--before={start.isoformat()}", "HEAD", "--", BRIEF_PAGE],
+                   cwd=path).stdout.strip()
+    template = page_text(run_git(["show", f"{prev}:{BRIEF_PAGE}"], cwd=path).stdout) if prev else ""
+    # The code the Brief published with: the day's last publish commit, not a merge after the close.
+    rev = commits[-1]["sha"] if commits else \
+        run_git(["rev-list", "-1", f"--before={end.isoformat()}", "HEAD"], cwd=path).stdout.strip()
     sched = run_git(["show", f"{rev}:{BRIEF_SCHEDULE}"], cwd=path, check=False) if rev else None
     if not sched or sched.returncode != 0:
         raise ReviewError(f"brief: {BRIEF_SCHEDULE} not found at the session date")
 
-    def last_of(name):
+    def first_of(name):  # the on-time page readers saw at that checkpoint, not a later re-publish
         found = [c for c in commits if c["checkpoint"] == name]
-        return found[-1] if found else None
+        return found[0] if found else None
 
-    brief = {"commits": commits, "texts": texts, "schedule_py": sched.stdout,
+    brief = {"commits": commits, "texts": texts, "template": template, "schedule_py": sched.stdout,
              "titles": checkpoint_titles(sched.stdout),
-             "premarket": last_of("PREMARKET"), "opening": last_of("OPEN_30M"),
+             "premarket": first_of("PREMARKET"), "opening": first_of("OPEN_30M"),
              "last": commits[-1] if commits else None}
     shutil.rmtree(path, ignore_errors=True)
     return brief
@@ -324,13 +347,20 @@ def cli_version():
     return tuple(int(x) for x in m.groups()) if m else None
 
 
+DOMAIN_RE = re.compile(r"(\*\.)?(?:[a-z0-9](?:[a-z0-9-]*[a-z0-9])?\.)+[a-z]{2,}")
+
+
 def load_fence():
     data = json.loads(read(os.path.join(ROOT, "scripts", "fence.json")) or "null")
     allow, deny = (data or {}).get("webfetch_allow"), (data or {}).get("webfetch_deny", [])
-    ok = (isinstance(allow, list) and allow and isinstance(deny, list)
-          and all(isinstance(d, str) and d.strip() and "(" not in d and ")" not in d for d in allow + deny))
+    ok = isinstance(allow, list) and allow and isinstance(deny, list) and all(isinstance(d, str) for d in allow + deny)
     if not ok:
         raise ReviewError("scripts/fence.json: webfetch_allow must be a non-empty list of domains")
+    # 'example.com' or '*.example.com' only: '*' or '*.com' would turn the allowlist back into the
+    # denylist the spike showed leaking through mirrors.
+    bad = [d for d in allow + deny if not DOMAIN_RE.fullmatch(d.lower())]
+    if bad:
+        raise ReviewError(f"scripts/fence.json: {len(bad)} entr(y/ies) not of the form example.com or *.example.com")
     deny = list(dict.fromkeys([*deny, *GITHUB_DENY]))
     return {"allow": allow, "deny": deny}
 
@@ -368,35 +398,48 @@ def walk_strings(obj, out):
 
 
 def parse_stream(stdout):
-    trace = {"tools": None, "model": None, "tool_uses": [], "result": None, "strings": [],
-             "permission_denials": 0}
-    by_id = {}
-    for line in stdout.splitlines():
+    trace = {"tools": None, "model": None, "tool_uses": [], "result": None, "read": [],
+             "permission_denials": 0, "unparsed": 0}
+    by_id, denied_ids = {}, set()
+    # Split on newlines only: str.splitlines() also breaks on U+2028/U+2029/U+0085, which JSON
+    # encoders leave raw inside strings, and a split event would vanish from every check.
+    for line in stdout.split("\n"):
+        if not line.strip():
+            continue
         try:
             ev = json.loads(line)
         except json.JSONDecodeError:
+            trace["unparsed"] += 1
             continue
         if not isinstance(ev, dict):
+            trace["unparsed"] += 1
             continue
-        walk_strings(ev, trace["strings"])  # the whole transcript, for the leak backstop
         t = ev.get("type")
+        if t not in ("assistant", "result"):
+            # Everything the call read (tool results, search results, fetched summaries); its own
+            # writing is excluded, since text can only reach it through these or its prompt.
+            walk_strings(ev, trace["read"])
         if t == "system" and ev.get("subtype") == "init":
             trace["tools"] = ev.get("tools")
             trace["model"] = ev.get("model")
         elif t == "system" and ev.get("subtype") == "permission_denied":
             trace["permission_denials"] += 1
+            denied_ids.add(ev.get("tool_use_id"))
         elif t == "assistant":
             for blk in (ev.get("message") or {}).get("content") or []:
                 if isinstance(blk, dict) and blk.get("type") in ("tool_use", "server_tool_use"):
                     u = {"id": blk.get("id"), "name": blk.get("name"),
                          "input": blk.get("input") if isinstance(blk.get("input"), dict) else {},
-                         "is_error": None, "result": "", "extra": ""}
+                         "is_error": None, "result": "", "extra": "", "denied": False}
                     by_id[u["id"]] = u
                     trace["tool_uses"].append(u)
         elif t == "user":
             content = (ev.get("message") or {}).get("content")
             blocks = [b for b in content if isinstance(b, dict) and b.get("type") == "tool_result"] \
                 if isinstance(content, list) else []
+            for meta in ev.get("tool_result_meta") or []:
+                if isinstance(meta, dict) and meta.get("non_execution_kind") == "permission-rule":
+                    denied_ids.add(meta.get("id"))
             for blk in blocks:
                 c = blk.get("content")
                 if isinstance(c, list):
@@ -411,6 +454,8 @@ def parse_stream(stdout):
             trace["result"] = {k: ev.get(k) for k in
                                ("subtype", "is_error", "num_turns", "duration_ms", "total_cost_usd",
                                 "result", "structured_output")}
+    for u in trace["tool_uses"]:
+        u["denied"] = u["id"] in denied_ids
     return trace
 
 
@@ -504,17 +549,18 @@ PERMISSION_RE = re.compile(r"denied access to domain|Permission to use \w+ has b
 
 
 def outcome_of(u):
-    """fetched | permission_denied | network_error. An absent tool result is not a fetch."""
+    """fetched | permission_denied | network_error. An absent tool result is not a fetch, and only
+    an error result can be a refusal: a fetched page that mentions permissions is still a fetch."""
     txt = u["result"] or ""
-    if PERMISSION_RE.search(txt):
-        return "permission_denied"
-    if u["is_error"] is None or u["is_error"] or txt.startswith("REDIRECT DETECTED"):
+    if u["is_error"] is None:
         return "network_error"
-    return "fetched"
+    if u["is_error"]:
+        return "permission_denied" if u["denied"] or PERMISSION_RE.search(txt) else "network_error"
+    return "network_error" if txt.startswith("REDIRECT DETECTED") else "fetched"
 
 
 def norm_host(url_or_host):
-    h = urlparse(url_or_host).hostname if "://" in url_or_host else url_or_host
+    h = urlparse(url_or_host).hostname if "://" in url_or_host else url_or_host.split("/")[0]
     h = (h or "").lower().rstrip(".")
     return h[4:] if h.startswith("www.") else h
 
@@ -539,6 +585,8 @@ def check_fence(trace, fence):
     allowed = A_TOOLS if call == "A" else set()
     if trace["tools"] is None:
         raise ReviewError(f"fence {call}: no init event, tool inventory unknown")
+    if trace["unparsed"]:
+        raise ReviewError(f"fence {call}: {trace['unparsed']} transcript line(s) did not parse, so it cannot be checked")
     extra = set(trace["tools"]) - allowed - HARMLESS_TOOLS
     used = {u["name"] for u in trace["tool_uses"]} - allowed - HARMLESS_TOOLS
     if extra or used:
@@ -573,11 +621,16 @@ def grounded_hosts(trace):
 # --------------------------------------------------------------------------
 # Leak backstop: 8-word overlaps between A's whole transcript and text it must never see
 # --------------------------------------------------------------------------
-WORD_RE = re.compile(r"[a-z0-9$%]+(?:[.,'-][a-z0-9$%]+)*")
+WORD_RE = re.compile(r"[a-z0-9$%]+(?:[.,'][a-z0-9$%]+)*")
+DASHES = dict.fromkeys(map(ord, "-\u2010\u2011\u2012\u2013\u2014\u2015\u2212\u2043\ufe58\ufe63\uff0d/"), " ")
+INVISIBLE = dict.fromkeys(map(ord, "\u00ad\u200b\u200c\u200d\u2060\ufeff"), None)
 
 
 def words(text):
-    t = text.lower().replace("’", "'").replace("‘", "'").replace("‐", "-").replace("‑", "-")
+    """Lower-case word tokens, with entities, compatibility forms, invisible characters and every
+    dash variant normalised, so 'same-day', 'same day' and 'same\u2013day' tokenise alike."""
+    t = unicodedata.normalize("NFKC", html.unescape(text)).lower()
+    t = t.translate(INVISIBLE).translate(DASHES).replace("\u2019", "'").replace("\u2018", "'")
     return WORD_RE.findall(t)
 
 
@@ -586,31 +639,49 @@ def shingles(text, n=8):
     return {" ".join(w[i:i + n]) for i in range(0, max(0, len(w) - n + 1))}
 
 
+# Lines that quote third-party public text verbatim. Search results legitimately carry the same
+# words, so they are not evidence of a leak: Market Lab's relayed wire headlines, and the Brief's
+# evidence-ledger rows that repeat Federal Reserve and agency release titles.
+RELAYED_LAB_LINE = re.compile(r"^WATCHING\b")
+QUOTED_BRIEF_LINE = re.compile(r"Published / scheduled item|· \d+ observations?$")
+
+
+def own_text(text, quoted):
+    return "\n".join(line for line in text.split("\n") if not quoted.search(line.strip()))
+
+
 def forbidden_texts(day, brief):
+    """Text call A must never see, by source: PRD §4's list plus this date's existing entries."""
     texts = {}
     for folder in ("handoffs", "notes"):
-        base = os.path.join(ROOT, folder)
-        for dirpath, _, files in os.walk(base):
+        for dirpath, _, files in os.walk(os.path.join(ROOT, folder)):
             for name in sorted(files):
                 p = os.path.join(dirpath, name)
-                body = read(p)
+                body = read_text(p)
                 if body and body.strip():
                     texts[os.path.relpath(p, ROOT)] = body
-    lab = read(os.path.join(ROOT, "lab", f"{day.isoformat()}.md"))
+    lab = read_text(os.path.join(ROOT, "lab", f"{day.isoformat()}.md"))
     if lab and lab.strip():
-        texts[f"lab/{day.isoformat()}.md"] = lab
+        texts[f"lab/{day.isoformat()}.md"] = own_text(lab, RELAYED_LAB_LINE)
+    # On a rerun by date the Scheduled entry (written after reading the Brief) and any earlier
+    # shadow entry are public too; a search snippet of either would contaminate the blind read.
+    for rel in (f"daily/{day.year}/{day.isoformat()}.md", f"shadow/daily/{day.year}/{day.isoformat()}.md"):
+        body = read_text(os.path.join(ROOT, rel))
+        if body and body.strip():
+            texts[rel] = body
     for sha, text in brief["texts"].items():
-        texts[f"brief page {sha[:7]}"] = text
+        texts[f"brief page {sha[:7]}"] = own_text(text, QUOTED_BRIEF_LINE)
     return texts
 
 
-def leak_hits(trace, forbidden, received):
-    """Shingle hits per forbidden source. Text the call legitimately received never counts."""
-    seen = shingles("\n".join(trace["strings"]))
-    own = shingles(received)
+def leak_hits(trace, forbidden, allowed):
+    """Shingle hits per forbidden source in everything the call read (tool and search results).
+    Shingles of `allowed` texts (the call's own prompt, the Brief's static template) never count."""
+    seen = shingles("\n".join(trace["read"]))
+    excluded = set().union(*(shingles(t) for t in allowed)) if allowed else set()
     hits = {}
     for name, text in forbidden.items():
-        n = len((shingles(text) - own) & seen)
+        n = len((shingles(text) - excluded) & seen)
         if n:
             hits[name] = n
     return hits
@@ -693,7 +764,7 @@ C_SCHEMA = {
 
 def _is_type(v, t):
     return {"string": isinstance(v, str), "boolean": isinstance(v, bool), "null": v is None,
-            "integer": isinstance(v, int) and not isinstance(v, bool),
+            "integer": (isinstance(v, int) and not isinstance(v, bool)) or (isinstance(v, float) and v.is_integer()),
             "number": isinstance(v, (int, float)) and not isinstance(v, bool),
             "array": isinstance(v, list), "object": isinstance(v, dict)}.get(t, False)
 
@@ -745,8 +816,18 @@ def check_paragraph(errs, path, text, lo=1, hi=SECTION5_MAX_WORDS):
         errs.append(f"{path}: starts with markdown structure")
 
 
+def check_url(errs, path, url, required):
+    if url is None and not required:
+        return
+    if not isinstance(url, str) or not URL_RE.fullmatch(url):
+        errs.append(f"{path}: {'a figure needs the URL it was read from' if not url else 'URL is malformed'}")
+
+
+BARE_WWW_RE = re.compile(r"(?<![/\w.])www\.[a-z0-9-]+(?:\.[a-z0-9-]+)+", re.I)
+
+
 def check_hosts(errs, call, out, hosts):
-    bad = sum(1 for s in all_strings(out) for u in urls_in(s) if norm_host(u) not in hosts)
+    bad = sum(1 for s in all_strings(out) for u in urls_in(s) + BARE_WWW_RE.findall(s) if norm_host(u) not in hosts)
     if bad:
         errs.append(f"{call}: {bad} cited URL(s) not grounded in the call's own sources")
 
@@ -760,14 +841,17 @@ def validate_a(out, trace):
         errs.append("closes: rows not in the fixed order " + ", ".join(CLOSE_IDS))
     for i, r in enumerate(out["closes"]):
         p = f"closes[{i}] ({CLOSE_IDS[i] if i < len(CLOSE_IDS) else '?'})"
+        if r["close"].strip().rstrip(".").lower() in MISSING_VALUES:  # 'Not yet posted.' means the same
+            r["close"] = r["close"].strip().rstrip(".").lower()
         close = r["close"].strip()
         if not close:
             errs.append(f"{p}: no value and no explicit unavailable / not yet posted")
         elif close not in MISSING_VALUES:
             if not re.search(r"\d", close):
                 errs.append(f"{p}: value is neither a figure nor unavailable / not yet posted")
-            if not (r["url"] or "").startswith(("https://", "http://")):
-                errs.append(f"{p}: a figure needs the URL it was read from")
+            check_url(errs, p, r["url"], required=True)
+        else:
+            check_url(errs, p, r["url"], required=False)
         if not r["source"].strip():
             errs.append(f"{p}: no source")
         if not r["time"].strip():
@@ -777,12 +861,14 @@ def validate_a(out, trace):
             errs.append(f"releases[{i}]: no source")
         if not r["release"].strip():
             errs.append(f"releases[{i}]: no release name")
+        check_url(errs, f"releases[{i}]", r["url"], required=False)
     for i, b in enumerate(out["moved"]):
         if not b["text"].strip():
             errs.append(f"moved[{i}]: empty")
         for j, s in enumerate(b["sources"]):
-            if not s["name"].strip() or not s["url"].startswith(("https://", "http://")):
-                errs.append(f"moved[{i}].sources[{j}]: needs a name and a URL")
+            if not s["name"].strip():
+                errs.append(f"moved[{i}].sources[{j}]: needs a name")
+            check_url(errs, f"moved[{i}].sources[{j}]", s["url"], required=True)
     for i, d in enumerate(out["drivers"]):
         if not d["driver"].strip():
             errs.append(f"drivers[{i}]: empty")
@@ -800,6 +886,8 @@ def validate_b(out, a_out, brief, received):
     if not out["publications"].startswith("Publications: "):
         errs.append("publications: must start with 'Publications: '")
     drivers = a_out["drivers"]
+    for c in out["coverage"]:
+        c["driver"] = int(c["driver"])  # 1.0 is a valid JSON Schema integer
     if [c["driver"] for c in out["coverage"]] != list(range(1, len(drivers) + 1)):
         errs.append(f"coverage: needs one row per call-A driver, numbered 1-{len(drivers)} in order")
     else:
@@ -845,9 +933,9 @@ def fail_if(errs, what):
 # Rendering
 # --------------------------------------------------------------------------
 def flat(s):
-    """One line of model text, made inert as markdown structure."""
+    """One line of model text, made inert as markdown structure (no raw HTML, no comments)."""
     s = " ".join(str(s or "").split())
-    return s.replace("<!--", "&lt;!--").replace("-->", "--&gt;")
+    return s.replace("<", "&lt;").replace("-->", "--&gt;")
 
 
 def cell(s):
@@ -1025,13 +1113,25 @@ def session_block(day, now):
             f"This run: {now.date().isoformat()} {clock(now)}\n</session>")
 
 
-def hypotheses_block():
-    hyp = read(os.path.join(ROOT, "hypotheses.md")) or "(hypotheses.md not found)"
-    return f'<file name="hypotheses.md">\n{hyp.strip()}\n</file>'
+def hypotheses_as_of(day):
+    """hypotheses.md as the journal stood at the session's main run (4:40 PM PT). A rerun of an old
+    date must not hand A and B later weekly verdicts about that very session."""
+    cutoff = datetime(day.year, day.month, day.day, 16, 40, tzinfo=PT)
+    rev = git("rev-list", "-1", f"--before={cutoff.isoformat()}", "HEAD", check=False).stdout.strip()
+    if not rev:
+        raise ReviewError("git: no commit before the session's main run; check out full history (fetch-depth: 0)")
+    shown = git("show", f"{rev}:hypotheses.md", check=False)
+    text = shown.stdout if shown.returncode == 0 else "(hypotheses.md did not exist at the session date)"
+    say(f"inputs: hypotheses.md as of {rev[:7]}")
+    return text
 
 
-def prompt_a(day, now):
-    return "\n\n".join([method_section("A"), "---", DATA_NOTE, session_block(day, now), hypotheses_block()])
+def hypotheses_block(text):
+    return f'<file name="hypotheses.md">\n{text.strip()}\n</file>'
+
+
+def prompt_a(day, now, hyp):
+    return "\n\n".join([method_section("A"), "---", DATA_NOTE, session_block(day, now), hypotheses_block(hyp)])
 
 
 def drivers_block(drivers):
@@ -1040,7 +1140,7 @@ def drivers_block(drivers):
                      for i, d in enumerate(drivers, start=1))
 
 
-def prompt_b(day, now, brief, a):
+def prompt_b(day, now, brief, a, hyp):
     commits = "\n".join(f"{c['checkpoint']} · {clock(c['time'])} · {c['time'].astimezone(timezone.utc):%H:%M} UTC · "
                         f"`{c['sha'][:7]}` · {permalink(c)}" for c in brief["commits"]) or "none on this date"
     pages = []
@@ -1059,7 +1159,7 @@ def prompt_b(day, now, brief, a):
         method_section("B"), "---", DATA_NOTE, session_block(day, now),
         # Section 5a is compared with A's blind Section 5, so B gets the same hypotheses A had: the
         # only difference between the two reads is then whether the Brief was seen.
-        hypotheses_block(),
+        hypotheses_block(hyp),
         f'<section2 from="call A">\n{render_section2(a)}\n</section2>',
         f'<drivers from="call A">\n{drivers_block(a["drivers"])}\n</drivers>',
         f"<publish_commits date=\"{day.isoformat()}\" timezone=\"America/Vancouver\">\n{commits}\n</publish_commits>",
@@ -1072,7 +1172,9 @@ def lab_inputs(entry):
     secs = sections(entry)
     s3 = secs.get("3") or ""
     drivers = []
-    after = s3.split("**Coverage vs control group**", 1)
+    # Anchored on the script's own line: call B's text is always inside a bullet or a cell, never at a
+    # line start, so it cannot imitate this marker and hand C a driver list A never wrote.
+    after = re.split(r"(?m)^\*\*Coverage vs control group\*\* \(2–5 material drivers only\)$", s3, maxsplit=1)
     if len(after) == 2:
         for line in after[1].splitlines():
             if not line.startswith("|"):
@@ -1106,20 +1208,41 @@ def git(*args, check=True):
     return run_git(list(args), cwd=ROOT, check=check)
 
 
-def commit_and_push(rel, transform, message):
-    """Apply `transform` to a fresh tree, commit only `rel`, push; on rejection refetch and redo."""
+def current_branch():
     branch = git("rev-parse", "--abbrev-ref", "HEAD").stdout.strip()
     if branch == "HEAD":
         raise ReviewError("git: detached HEAD; check out the branch to write to")
+    return branch
+
+
+def sync_with_origin():
+    """Plan against what is on origin, not a stale clone (the fallback host keeps a long-lived one)."""
+    branch = current_branch()
+    git("fetch", "--quiet", "origin", branch)
+    if git("rev-parse", "HEAD").stdout != git("rev-parse", f"origin/{branch}").stdout:
+        if git("merge-base", "--is-ancestor", "HEAD", f"origin/{branch}", check=False).returncode != 0:
+            raise ReviewError(f"git: local {branch} has commits that are not on origin; push or drop them first")
+        git("merge", "--quiet", "--ff-only", f"origin/{branch}")
+        say(f"git: fast-forwarded to origin/{branch}")
+
+
+PUSH_REFUSED = re.compile(r"protected branch|GH006|GH013|permission|denied|\b403\b|not allowed", re.I)
+
+
+def commit_and_push(rel, transform, message):
+    """Apply `transform` to a fresh tree, commit only `rel`, push; on rejection refetch and redo."""
+    branch = current_branch()
     for attempt in range(1, PUSH_TRIES + 1):
         transform()
         changed = {x for x in git("diff", "--name-only", "HEAD").stdout.split("\n") if x}
-        untracked = {x for x in git("ls-files", "--others", "--exclude-standard", "--", rel).stdout.split("\n") if x}
-        if not (changed | untracked):
-            say("git: entry unchanged; nothing to commit")
-            return None
         if changed - {rel}:
             raise ReviewError(f"git: {len(changed - {rel})} path(s) outside the mode's allowed path changed")
+        head = git("show", f"HEAD:{rel}", check=False)
+        if head.returncode == 0 and head.stdout == read(os.path.join(ROOT, rel)):
+            say("git: entry unchanged; nothing to commit")
+            return None
+        if git("check-ignore", "-q", "--", rel, check=False).returncode == 0:
+            raise ReviewError(f"git: {rel} is ignored by a .gitignore rule, so it cannot be committed")
         git("add", "--", rel)
         staged = {x for x in git("diff", "--cached", "--name-only").stdout.split("\n") if x}
         if staged != {rel}:
@@ -1127,13 +1250,21 @@ def commit_and_push(rel, transform, message):
         git("-c", f"user.name={GIT_NAME}", "-c", f"user.email={GIT_EMAIL}", "commit", "--quiet",
             "-m", message, "-m", TRAILER)
         sha = git("rev-parse", "--short", "HEAD").stdout.strip()
-        if git("push", "--quiet", "origin", f"HEAD:refs/heads/{branch}", check=False).returncode == 0:
+        pushed = git("push", "--quiet", "origin", f"HEAD:refs/heads/{branch}", check=False)
+        if pushed.returncode == 0:
             say(f"git: pushed {sha} to {branch} ({rel})")
             return sha
+        if PUSH_REFUSED.search(pushed.stderr):  # retrying cannot help; name the cause
+            git("reset", "--quiet", "--hard", f"origin/{branch}")  # leave no unpushed commit behind
+            raise ReviewError(f"git: the remote refused the push to {branch} (branch protection or permissions); "
+                              "the Actions bot needs push access")
+        if attempt == PUSH_TRIES:
+            break
         say(f"git: push rejected (attempt {attempt}/{PUSH_TRIES}); fetching {branch} and re-applying")
         git("fetch", "--quiet", "origin", branch)
         git("reset", "--quiet", "--hard", f"origin/{branch}")
-    raise ReviewError(f"git: push failed {PUSH_TRIES} times")
+    git("reset", "--quiet", "--hard", f"origin/{branch}")  # leave no unpushed commit behind
+    raise ReviewError(f"git: push rejected {PUSH_TRIES} times; nothing was committed")
 
 
 # --------------------------------------------------------------------------
@@ -1168,27 +1299,37 @@ def resolve(args, now):
     return latest_session(now.date()), True
 
 
+def nothing_to_do(args, msg):
+    """An ordinary exit 0, except that an inject run must reach validation and fail there."""
+    if args.inject != "none":
+        raise ReviewError(f"inject={args.inject}: the run never reached validation ({msg}); dispatch a closed session date")
+    say(f"review: {msg}; nothing to do")
+    return 0
+
+
 def main_inner(args):
     now = datetime.fromisoformat(args.now).astimezone(PT) if args.now else datetime.now(PT)
     host = "github-runner" if os.environ.get("GITHUB_ACTIONS") else "local"
     say(f"review: host={host} mode={args.mode} force={args.force} inject={args.inject} "
         f"now={now.isoformat(timespec='minutes')}")
     if args.mode == "off":
-        say("review: mode is off; nothing to do")
-        return 0
+        return nothing_to_do(args, "mode is off")
     if args.mode == "production":
         raise ReviewError("production mode is phase 2b and is not built yet (owner ruling at gate G2)")
     if args.inject != "none":
         args.force = True  # an injected failure must exercise calls A and B, then fail before any commit
     day, ok = resolve(args, now)
     if not ok:
-        say(f"review: {day.isoformat()} is not an NYSE session; nothing to do")
-        return 0
+        return nothing_to_do(args, f"{day.isoformat()} is not an NYSE session")
     _, close = session_hours(day)
     if now < close + timedelta(minutes=30):
-        say(f"review: the {day.isoformat()} session has not closed (+30 min) yet; nothing to do")
-        return 0
+        if args.date:
+            return nothing_to_do(args, f"the {day.isoformat()} session has not closed (+30 min) yet")
+        day = latest_session(day - timedelta(days=1))  # no date given: the latest *closed* session
 
+    if git("status", "--porcelain", "--untracked-files=no").stdout.strip():
+        raise ReviewError("git: working tree has uncommitted changes to tracked files")
+    sync_with_origin()
     rel = f"shadow/daily/{day.year}/{day.isoformat()}.md"
     path = os.path.join(ROOT, rel)
     entry = read(path)
@@ -1203,16 +1344,12 @@ def main_inner(args):
         if lab and lab_open:
             plan = "lab"
         else:
-            say(f"review: {rel} already has Section 5"
-                + ("" if lab else f" and lab/{day.isoformat()}.md does not exist yet")
-                + "; nothing to do")
-            return 0
+            return nothing_to_do(args, f"{rel} already has Section 5"
+                                 + ("" if lab else f" and lab/{day.isoformat()}.md does not exist yet"))
     else:
         plan = "full"
     say(f"review: session {day.isoformat()}, plan={plan}{' (calls A, B' + (', C' if lab else '') + ')' if plan == 'full' else ' (call C only)'}")
 
-    if git("status", "--porcelain", "--untracked-files=no").stdout.strip():
-        raise ReviewError("git: working tree has uncommitted changes to tracked files")
     v = cli_version()
     if not v or v < MIN_CLI:
         raise ReviewError(f"claude CLI {'.'.join(map(str, MIN_CLI))}+ required (found {'.'.join(map(str, v)) if v else 'none'})")
@@ -1266,13 +1403,16 @@ def run_full(day, now, lab, fence, args, work):
         + ("" if brief["premarket"] else "; PREMARKET not published")
         + ("" if brief["opening"] else "; OPEN_30M not published"))
 
-    pa = prompt_a(day, now)
+    hyp = hypotheses_as_of(day)
+    forbidden = forbidden_texts(day, brief)
+    say(f"leak backstop: watching {len(forbidden)} source(s)")
+    pa = prompt_a(day, now, hyp)
     trace_a, a = call("A", pa, A_SCHEMA, fence, args)
     if args.inject == "leak":
         phrase = read(os.path.join(ROOT, "handoffs", "chatgpt-latest.md")) or ""
-        trace_a["strings"].append(" ".join(phrase.split()[:24]))
-        say("inject: appended a handoff phrase to call A's transcript")
-    hits = leak_hits(trace_a, forbidden_texts(day, brief), pa)
+        trace_a["read"].append("Search result: " + " ".join(phrase.split()[:24]))
+        say("inject: added a handoff phrase to the search results in call A's transcript")
+    hits = leak_hits(trace_a, forbidden, [pa, brief["template"]])
     if hits:
         detail = ", ".join(f"{k}: {n}" for k, n in sorted(hits.items()))
         annotate("error", "leak backstop", detail)
@@ -1282,7 +1422,7 @@ def run_full(day, now, lab, fence, args, work):
     say(f"validation: call A ok ({len(a['releases'])} releases, {len(a['moved'])} moved bullets, "
         f"{len(a['drivers'])} drivers, Section 5 {word_count(a['section5'])} words)")
 
-    pb = prompt_b(day, now, brief, a)
+    pb = prompt_b(day, now, brief, a, hyp)
     _, b = call("B", pb, B_SCHEMA, fence, args)
     if args.inject == "bad-tag":
         if isinstance(b.get("gaps"), list) and b["gaps"] and isinstance(b["gaps"][0], dict):
