@@ -524,6 +524,14 @@ class FailsClosed(Harness):
         self.put("A", a_output(), uses)
         self.assert_failed_without_commit(text="outside the allowlist")
 
+    def test_empty_optional_url_is_fine(self):
+        a = a_output()
+        a["releases"][0]["url"] = ""
+        a["closes"][9]["url"] = " "
+        self.put("A", a)
+        rc, out = self.run_review()
+        self.assertEqual(rc, 0, out)
+
     def test_malformed_url_is_rejected(self):
         a = a_output()
         a["closes"][0]["url"] = "https://stockanalysis.com/etf/spy/history/\n<!--"

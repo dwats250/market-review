@@ -572,7 +572,7 @@ def domain_match(host, pattern):
     return host == pattern or host == "www." + pattern
 
 
-URL_RE = re.compile(r"https?://[^\s\"'<>()\[\]{}|\\^`]+")
+URL_RE = re.compile(r"https?://[^\s\"'<>()\[\]{}|\\^`]+", re.I)
 
 
 def urls_in(text):
@@ -827,8 +827,8 @@ def check_paragraph(errs, path, text, lo=1, hi=SECTION5_MAX_WORDS):
 
 
 def check_url(errs, path, url, required):
-    if url is None and not required:
-        return
+    if not required and (url is None or (isinstance(url, str) and not url.strip())):
+        return  # an optional URL may come back null or empty
     if not isinstance(url, str) or not URL_RE.fullmatch(url):
         errs.append(f"{path}: {'a figure needs the URL it was read from' if not url else 'URL is malformed'}")
 
