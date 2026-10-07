@@ -646,8 +646,14 @@ RELAYED_LAB_LINE = re.compile(r"^WATCHING\b")
 QUOTED_BRIEF_LINE = re.compile(r"Published / scheduled item|· \d+ observations?$")
 
 
-def own_text(text, quoted):
-    return "\n".join(line for line in text.split("\n") if not quoted.search(line.strip()))
+LINK_TARGET = re.compile(r"\]\([^)]*\)|https?://\S+")
+
+
+def own_text(text, quoted=None):
+    """The source's own words: no URLs or link targets (A legitimately fetches the same pages, and a
+    long URL alone tokenises to 8+ words) and, where given, no lines quoting third-party text."""
+    lines = (line for line in text.split("\n") if not (quoted and quoted.search(line.strip())))
+    return LINK_TARGET.sub(" ", "\n".join(lines))
 
 
 def forbidden_texts(day, brief):
@@ -659,16 +665,20 @@ def forbidden_texts(day, brief):
                 p = os.path.join(dirpath, name)
                 body = read_text(p)
                 if body and body.strip():
-                    texts[os.path.relpath(p, ROOT)] = body
+                    texts[os.path.relpath(p, ROOT)] = own_text(body)
     lab = read_text(os.path.join(ROOT, "lab", f"{day.isoformat()}.md"))
     if lab and lab.strip():
         texts[f"lab/{day.isoformat()}.md"] = own_text(lab, RELAYED_LAB_LINE)
-    # On a rerun by date the Scheduled entry (written after reading the Brief) and any earlier
-    # shadow entry are public too; a search snippet of either would contaminate the blind read.
+    # On a rerun by date the Scheduled entry and any earlier shadow entry are public too. Their reads
+    # (Sections 5 and 5a, written after seeing the Brief) are what a search snippet would contaminate
+    # the blind read with; their Section 2 restates the same public facts A gathers, so it is left out.
     for rel in (f"daily/{day.year}/{day.isoformat()}.md", f"shadow/daily/{day.year}/{day.isoformat()}.md"):
         body = read_text(os.path.join(ROOT, rel))
         if body and body.strip():
-            texts[rel] = body
+            secs = sections(body)
+            reads = "\n".join(strip_comments(secs.get(k) or "") for k in ("5", "5a"))
+            if reads.strip():
+                texts[f"{rel} (reads)"] = own_text(reads)
     for sha, text in brief["texts"].items():
         texts[f"brief page {sha[:7]}"] = own_text(text, QUOTED_BRIEF_LINE)
     return texts

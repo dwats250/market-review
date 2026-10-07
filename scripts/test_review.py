@@ -29,7 +29,8 @@ SECTION5 = ("The driver was the payrolls miss, and capital went to megacap tech 
             "Mixed on breadth. What would change the read: RSP beating SPY on an up day.")
 GLOSSARY = "Bear steepener: long-end yields rose more than the front end, so the curve steepened."
 FED_TITLE = "Federal Reserve Board issues enforcement action with Ontario Bancorporation, Inc."
-SCHEDULED_PHRASE = "The weakest payrolls of the year (+29k, −60k revisions) cut October hike odds"
+SCHEDULED_PHRASE = "The weakest payrolls of the year (+29k, −60k revisions) cut October hike odds"  # its Section 2
+SCHEDULED_READ = "Call it mixed: concentrated at the top, wider at the bottom. The unresolved tension is rates"  # its Section 5
 SECTION5A = "After the brief: the read holds, but the brief never saw the payrolls report before its premarket page."
 
 FAKE_CLAUDE = r'''#!/usr/bin/env python3
@@ -472,9 +473,16 @@ class FailsClosed(Harness):
         self.search_returns("I found: " + BRIEF_SENTENCE.upper().replace(" ", " \u2013 ", 1) + "!")
         self.assert_failed_without_commit(text="brief page")
 
-    def test_scheduled_entry_for_the_date_is_a_leak(self):
-        self.search_returns("github.com result: " + SCHEDULED_PHRASE)
-        self.assert_failed_without_commit(text=f"daily/2026/{DAY}.md")
+    def test_scheduled_read_for_the_date_is_a_leak(self):
+        self.search_returns("github.com result: " + SCHEDULED_READ)
+        self.assert_failed_without_commit(text=f"daily/2026/{DAY}.md (reads)")
+
+    def test_scheduled_section2_and_urls_are_not_leaks(self):
+        treasury = ("https://home.treasury.gov/resource-center/data-chart-center/interest-rates/pages/xml"
+                    "?data=daily_treasury_yield_curve&field_tdr_date_value_month=202610")
+        self.search_returns(f"Links: [{{\"url\":\"{treasury}\"}}] " + SCHEDULED_PHRASE)
+        rc, out = self.run_review()
+        self.assertEqual(rc, 0, out)
 
     def test_lab_own_text_is_a_leak_but_relayed_headlines_are_not(self):
         self.commit_to_work(f"lab/{DAY}.md", LAB, "Lab handoff")
@@ -503,7 +511,7 @@ class FailsClosed(Harness):
         self.assertEqual(rc, 0, out)
 
     def test_line_separator_cannot_hide_a_leak(self):
-        self.search_returns("Snippet\u2028" + HANDOFF_SENTENCE, raw=True)
+        self.search_returns("Snippet\u2028 and \u0085" + HANDOFF_SENTENCE, raw=True)  # the CLI escapes U+2028, not U+0085
         self.assert_failed_without_commit(text="handoffs/chatgpt-latest.md")
 
     def test_unparsed_transcript_line_fails(self):
