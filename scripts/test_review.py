@@ -423,6 +423,36 @@ class MissingOpening(Harness):
         self.assertIn("Opening headline by the close: not scored (OPEN_30M not published).", self.remote_file(ENTRY))
 
 
+class CatchUp(Harness):
+    STUB = "# stub\n\n## 5. What is the truth today?\n\nRead.\n\n## 8. Lab evaluation (experimental)\n"
+    MONDAY = "2026-10-05T16:40:00-07:00"
+
+    def test_scheduled_run_completes_a_missed_session(self):
+        self.commit_to_work("shadow/daily/2026/2026-10-05.md", self.STUB, "Monday done")
+        rc, out = self.run_review(date=None, now=self.MONDAY)
+        self.assertEqual(rc, 0, out)
+        self.assertIn("plan 2026-10-02 full", out)
+        self.assertIsNotNone(self.remote_file(ENTRY))
+
+    def test_scheduled_run_adds_a_late_lab_file(self):
+        self.assertEqual(self.run_review()[0], 0)                    # Friday's entry, no lab yet
+        sh(["git", "pull", "-q"], self.work)
+        self.commit_to_work(f"lab/{DAY}.md", LAB, "Lab handoff (late)")
+        self.commit_to_work("shadow/daily/2026/2026-10-05.md", self.STUB, "Monday done")
+        self.commit_to_work("shadow/daily/2026/2026-10-01.md", self.STUB, "Oct 1 done")  # else it is caught up too
+        rc, out = self.run_review(date=None, now=self.MONDAY)
+        self.assertEqual(rc, 0, out)
+        self.assertIn("plan 2026-10-02 lab", out)
+        self.assertIn("**qualifying**", self.remote_file(ENTRY))
+
+    def test_explicit_date_never_catches_up(self):
+        self.commit_to_work("shadow/daily/2026/2026-10-05.md", self.STUB, "Monday done")
+        rc, out = self.run_review(date="2026-10-05", now=self.MONDAY)
+        self.assertEqual(rc, 0, out)
+        self.assertIn("nothing to do", out)
+        self.assertIsNone(self.remote_file(ENTRY))
+
+
 class Republished(Harness):
     def test_on_time_premarket_page_is_scored(self):
         shutil.rmtree(self.brief)

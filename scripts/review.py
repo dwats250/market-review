@@ -285,8 +285,11 @@ def fetch_brief(day, work):
     texts = {}
     for c in commits:
         if c["sha"] not in texts:
-            raw = run_git(["show", f"{c['sha']}:{BRIEF_PAGE}"], cwd=path).stdout
-            texts[c["sha"]] = page_text(raw)
+            shown = run_git(["show", f"{c['sha']}:{BRIEF_PAGE}"], cwd=path, check=False)
+            if shown.returncode != 0:
+                raise ReviewError(f"brief: page {c['sha'][:7]} could not be read; a local REVIEW_BRIEF_URL "
+                                  "must be a full clone, not a partial one")
+            texts[c["sha"]] = page_text(shown.stdout)
     # The last page published before this date: its text is the Brief's static template (headings,
     # glossary, ledger boilerplate), which the leak backstop must not count as today's Brief.
     prev = run_git(["log", "-1", "--format=%H", f"--before={start.isoformat()}", "HEAD", "--", BRIEF_PAGE],
@@ -1317,6 +1320,55 @@ def nothing_to_do(args, msg):
     return 0
 
 
+def entry_path(day):
+    rel = f"shadow/daily/{day.year}/{day.isoformat()}.md"
+    return rel, os.path.join(ROOT, rel)
+
+
+def plan_for(day, force):
+    """'full', 'lab' or None for one session, from what is on the branch (PRD §5 step 2)."""
+    _, path = entry_path(day)
+    entry = read(path)
+    lab = read(os.path.join(ROOT, "lab", f"{day.isoformat()}.md"))
+    lab = lab if lab and lab.strip() else None
+    if entry is None or is_empty(sections(entry).get("5")) or force:
+        return "full", None
+    try:
+        lab_open = is_empty(split_at_lab(entry)[1])
+    except ReviewError:
+        lab_open = False
+    if lab and lab_open:
+        return "lab", None
+    return None, ("already has Section 5" + ("" if lab else f" and lab/{day.isoformat()}.md does not exist yet"))
+
+
+CATCH_UP = 2  # earlier sessions a scheduled run also checks, so one bad day is not lost for good
+
+
+def work_list(args, day):
+    """The (session, plan) items for this run. An explicit date, force or inject means that session
+    only. Otherwise the current session first, then up to CATCH_UP earlier ones: at most one full
+    entry and one lab-only pass per run, which keeps the job inside its 30 minutes."""
+    days = [day]
+    if not (args.date or args.force):
+        d = day
+        for _ in range(CATCH_UP):
+            d = latest_session(d - timedelta(days=1))
+            days.append(d)
+    items, reasons, full, lab = [], [], False, False
+    for d in days:
+        plan, why = plan_for(d, args.force)
+        if plan == "full" and not full:
+            items.append((d, "full"))
+            full = True
+        elif plan == "lab" and not lab:
+            items.append((d, "lab"))
+            lab = True
+        elif plan is None and d == day:
+            reasons.append(f"shadow/daily/{d.year}/{d.isoformat()}.md {why}")
+    return items, reasons
+
+
 def main_inner(args):
     now = datetime.fromisoformat(args.now).astimezone(PT) if args.now else datetime.now(PT)
     host = "github-runner" if os.environ.get("GITHUB_ACTIONS") else "local"
@@ -1340,25 +1392,10 @@ def main_inner(args):
     if git("status", "--porcelain", "--untracked-files=no").stdout.strip():
         raise ReviewError("git: working tree has uncommitted changes to tracked files")
     sync_with_origin()
-    rel = f"shadow/daily/{day.year}/{day.isoformat()}.md"
-    path = os.path.join(ROOT, rel)
-    entry = read(path)
-    lab = read(os.path.join(ROOT, "lab", f"{day.isoformat()}.md"))
-    lab = lab if lab and lab.strip() else None
-    has5 = entry is not None and not is_empty(sections(entry).get("5"))
-    if has5 and not args.force:
-        try:
-            lab_open = is_empty(split_at_lab(entry)[1])
-        except ReviewError:
-            lab_open = False
-        if lab and lab_open:
-            plan = "lab"
-        else:
-            return nothing_to_do(args, f"{rel} already has Section 5"
-                                 + ("" if lab else f" and lab/{day.isoformat()}.md does not exist yet"))
-    else:
-        plan = "full"
-    say(f"review: session {day.isoformat()}, plan={plan}{' (calls A, B' + (', C' if lab else '') + ')' if plan == 'full' else ' (call C only)'}")
+    items, reasons = work_list(args, day)
+    if not items:
+        return nothing_to_do(args, "; ".join(reasons) or "no work")
+    say("review: plan " + ", ".join(f"{d.isoformat()} {p}" for d, p in items))
 
     v = cli_version()
     if not v or v < MIN_CLI:
@@ -1367,6 +1404,18 @@ def main_inner(args):
         raise ReviewError("CLAUDE_CODE_OAUTH_TOKEN is not set (create one with `claude setup-token`)")
     say(f"review: claude CLI {'.'.join(map(str, v))}")
     fence = load_fence()
+    for d, plan in items:  # each entry commits on its own; the first failure stops the run red
+        run_plan(d, plan, now, fence, args)
+    return 0
+
+
+def run_plan(day, plan, now, fence, args):
+    rel, path = entry_path(day)
+    entry = read(path)
+    lab = read(os.path.join(ROOT, "lab", f"{day.isoformat()}.md"))
+    lab = lab if lab and lab.strip() else None
+    say(f"review: session {day.isoformat()}, plan={plan}"
+        + (f" (calls A, B{', C' if lab else ''})" if plan == "full" else " (call C only)"))
     work = tempfile.mkdtemp(prefix="review-")
     try:
         if plan == "lab":
@@ -1399,11 +1448,10 @@ def main_inner(args):
             if saved:
                 write(saved, text)
             say("review: dry run; nothing written to the repository" + (f" (entry saved to {saved})" if saved else ""))
-            return 0
+            return
         commit_and_push(rel, transform, message)
     finally:
         shutil.rmtree(work, ignore_errors=True)
-    return 0
 
 
 def run_full(day, now, lab, fence, args, work):
