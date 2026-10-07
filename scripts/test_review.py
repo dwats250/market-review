@@ -2,7 +2,7 @@
 """Hermetic tests for scripts/review.py: a fake `claude`, a fixture Market Brief repo and a local
 bare remote. No network, no model calls.
 
-    python3 -m unittest scripts/test_review.py -v
+    python3 -B -m unittest scripts/test_review.py -v
 """
 import json
 import os
