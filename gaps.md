@@ -10,14 +10,14 @@ Log line format: `- date · tag · [MAJOR ·] what was missing. [Impaired: … E
 |---|---|---|---|
 | macro-release | 4 | 2026-10-05 | **Candidate** (rules 1 and 2; W40) |
 | consensus | 0 | — | — |
-| breadth | 0 | — | — |
+| breadth | 1 | 2026-10-08 | — |
 | concentration | 0 | — | — |
-| rates-vol | 4 | 2026-10-05 | **Candidate** (rule 1; W40) |
+| rates-vol | 5 | 2026-10-08 | **Candidate** (rule 1; W40) |
 | equity-vol | 0 | — | — |
 | timing | 0 | — | — |
 | prose | 1 | 2026-09-30 | — |
-| defect | 4 | 2026-10-05 | **Candidate** (rule 1; W40). Two kinds: missed publications Sep 30, Oct 1, Oct 5; evidence consistency Oct 2, Oct 5 |
-| other | 1 | 2026-10-01 | — |
+| defect | 5 | 2026-10-08 | **Candidate** (rule 1; W40). Two kinds: missed publications Sep 30, Oct 1, Oct 5; evidence consistency Oct 2, Oct 5 |
+| other | 2 | 2026-10-08 | — |
 
 Candidate design questions: `weekly/2026/2026-W40.md` section 4. For owner review only.
 
@@ -43,3 +43,7 @@ Candidate design questions: `weekly/2026/2026-W40.md` section 4. For owner revie
 - 2026-10-05 · `defect` · Evidence consistency: the 7:02 "industrials slip" read (XLI −0.61%) was carried through 12:02, when the page's own table showed XLI +0.33% and all sectors but XLRE up; no SPY print all day.
 - 2026-10-05 · `macro-release` · ISM services (prices 74.0 from 72.6; headline 54.9 from 55.4), out at 7:00 AM PT, never reached the brief (ISM not collected; no synthesis after 7:02).
 - 2026-10-05 · `rates-vol` · Rates block showed only Friday's curve; the 10Y's new 2002 high (~5.31–5.35%) and bear steepening never reached the page.
+- 2026-10-08 · `defect` · Evidence consistency, third time: the close page left the staples watch without a verdict although its own table met the confirm (XLP +2.07%, XLK −1.79%), and the XLE watch read "No current XLE print" beside a table printing XLE +2.90%.
+- 2026-10-08 · `other` · Crude and news not collected: XLE +2.90% shown "with no news here to explain it" on a day WTI settled +3.64% and Brent +4.07% on Hormuz headlines.
+- 2026-10-08 · `breadth` · Comprehensive breadth not collected: the 7:02 "defensive tilt" carried to the close while the S&P 500 median stock rose 0.82% (67.5% advancing) and the Nasdaq-100 fell (lab).
+- 2026-10-08 · `rates-vol` · Rates block again showed only a prior-day curve (ledger: observation 2026-10-06 under an Oct 7 label); no live yields.
