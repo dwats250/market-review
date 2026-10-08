@@ -12,7 +12,7 @@ Log line format: `- date · tag · [MAJOR ·] what was missing. [Impaired: … E
 | consensus | 0 | — | — |
 | breadth | 1 | 2026-10-08 | — |
 | concentration | 0 | — | — |
-| rates-vol | 5 | 2026-10-08 | **Candidate** (rule 1; W40) |
+| rates-vol | 4 | 2026-10-05 | **Candidate** (rule 1; W40) |
 | equity-vol | 0 | — | — |
 | timing | 0 | — | — |
 | prose | 1 | 2026-09-30 | — |
@@ -43,7 +43,6 @@ Candidate design questions: `weekly/2026/2026-W40.md` section 4. For owner revie
 - 2026-10-05 · `defect` · Evidence consistency: the 7:02 "industrials slip" read (XLI −0.61%) was carried through 12:02, when the page's own table showed XLI +0.33% and all sectors but XLRE up; no SPY print all day.
 - 2026-10-05 · `macro-release` · ISM services (prices 74.0 from 72.6; headline 54.9 from 55.4), out at 7:00 AM PT, never reached the brief (ISM not collected; no synthesis after 7:02).
 - 2026-10-05 · `rates-vol` · Rates block showed only Friday's curve; the 10Y's new 2002 high (~5.31–5.35%) and bear steepening never reached the page.
-- 2026-10-08 · `defect` · Evidence consistency, third time: the close page left the staples watch without a verdict although its own table met the confirm (XLP +2.07%, XLK −1.79%), and the XLE watch read "No current XLE print" beside a table printing XLE +2.90%.
-- 2026-10-08 · `other` · Crude and news not collected: XLE +2.90% shown "with no news here to explain it" on a day WTI settled +3.64% and Brent +4.07% on Hormuz headlines.
-- 2026-10-08 · `breadth` · Comprehensive breadth not collected: the 7:02 "defensive tilt" carried to the close while the S&P 500 median stock rose 0.82% (67.5% advancing) and the Nasdaq-100 fell (lab).
-- 2026-10-08 · `rates-vol` · Rates block again showed only a prior-day curve (ledger: observation 2026-10-06 under an Oct 7 label); no live yields.
+- 2026-10-08 · `defect` · Watch adjudication: the close page left the staples watch (into the close) without a verdict, although its own table met the confirm (XLP +2.07%, XLK −1.79%), and carried "No current XLE print" beside XLE +2.90%. Cause: by design, not model reasoning. Refresh and close pages carry watches unchanged ("nothing is reassessed", `continuity.py` `carried_state`). Whether the Oct 2 and Oct 5 cases share this cause is not checked.
+- 2026-10-08 · `other` · Missing evidence: crude and news not collected. XLE +2.90% shown "with no news here to explain it" on a day WTI settled +3.64% and Brent +4.07% on Hormuz headlines. The Brief flagged the gap itself.
+- 2026-10-08 · `breadth` · Missing evidence plus cadence: no constituent breadth and no analysis after 7:02. The thrust came after 12:30 ET (SPX median +0.82%, 67.5% advancing at 3:55 PM ET) with the Nasdaq-100 down (lab); the 7:02 read fit breadth at the time.
