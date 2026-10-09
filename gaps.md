@@ -8,16 +8,16 @@ Log line format: `- date · tag · [MAJOR ·] what was missing. [Impaired: … E
 
 | Tag | Days | Last seen | Candidate (rule 1: 3+ days · rule 2: MAJOR) |
 |---|---|---|---|
-| macro-release | 4 | 2026-10-05 | **Candidate** (rules 1 and 2; W40) |
+| macro-release | 5 | 2026-10-09 | **Candidate** (rules 1 and 2; W40) |
 | consensus | 0 | — | — |
-| breadth | 1 | 2026-10-08 | — |
+| breadth | 2 | 2026-10-09 | — |
 | concentration | 0 | — | — |
 | rates-vol | 4 | 2026-10-05 | **Candidate** (rule 1; W40) |
 | equity-vol | 0 | — | — |
 | timing | 0 | — | — |
 | prose | 1 | 2026-09-30 | — |
-| defect | 5 | 2026-10-08 | **Candidate** (rule 1; W40). Two kinds: missed publications Sep 30, Oct 1, Oct 5; evidence consistency Oct 2, Oct 5 |
-| other | 2 | 2026-10-08 | — |
+| defect | 6 | 2026-10-09 | **Candidate** (rule 1; W40). Kinds: missed publications Sep 30, Oct 1, Oct 5; evidence consistency Oct 2, Oct 5; watch adjudication Oct 8, Oct 9; missing index prints Oct 9 (MAJOR) |
+| other | 3 | 2026-10-09 | Meets rule 1 (Oct 1, 8, 9); for the weekly to confirm |
 
 Candidate design questions: `weekly/2026/2026-W40.md` section 4. For owner review only.
 
@@ -46,3 +46,8 @@ Candidate design questions: `weekly/2026/2026-W40.md` section 4. For owner revie
 - 2026-10-08 · `defect` · Watch adjudication: the close page left the staples watch (into the close) without a verdict, although its own table met the confirm (XLP +2.07%, XLK −1.79%), and carried "No current XLE print" beside XLE +2.90%. Cause: by design, not model reasoning. Refresh and close pages carry watches unchanged ("nothing is reassessed", `continuity.py` `carried_state`). Whether the Oct 2 and Oct 5 cases share this cause is not checked.
 - 2026-10-08 · `other` · Missing evidence: crude and news not collected. XLE +2.90% shown "with no news here to explain it" on a day WTI settled +3.64% and Brent +4.07% on Hormuz headlines. The Brief flagged the gap itself.
 - 2026-10-08 · `breadth` · Missing evidence plus cadence: no constituent breadth and no analysis after 7:02. The thrust came after 12:30 ET (SPX median +0.82%, 67.5% advancing at 3:55 PM ET) with the Nasdaq-100 down (lab); the 7:02 read fit breadth at the time.
+- 2026-10-09 · `defect` · MAJOR · No SPY, QQQ or NVDA print on any page after 6:02 AM PT; three watches untested and the 7:03 read "can't tell whether it lifts the tape". Impaired: the 7:03 "technology stalls" rotation call stood all day. Evidence: the page's own words; S&P 500 +0.59%, Dow +0.83%; lab SPX 63.5% advancing, NDX 69.0% at 10:00 ET.
+- 2026-10-09 · `defect` · Watch adjudication, fourth time: gold/miners watch unjudged with its confirm met on the page's own table (GLD +1.57%, GDX +2.95%); XLV and SPY-vs-QQQ watches without verdicts. Same `carried_state` cause as Oct 8.
+- 2026-10-09 · `macro-release` · UMich October prelim (46.3 from 48.1; 1-yr inflation expectations 4.7%) at 10:00 ET not collected. Not MAJOR.
+- 2026-10-09 · `breadth` · Constituent breadth not collected: a broad advance (lab SPX 62.7% advancing, NDX median +0.58% at the close) behind a flat cap-weighted XLK at 7:03.
+- 2026-10-09 · `other` · News not collected: the premarket IRGC tanker strike preceded the gold bid the page called "a first hint of haven demand" without a cause.
