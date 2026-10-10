@@ -10,20 +10,20 @@ Log line format: `- date · tag · [MAJOR ·] what was missing. [Impaired: … E
 |---|---|---|---|
 | macro-release | 6 | 2026-10-07 | **Candidate** (rules 1 and 2; W40) |
 | consensus | 0 | — | — |
-| breadth | 1 | 2026-10-07 | — (MAJOR line logged 2026-10-07; weekly to assess) |
+| breadth | 1 | 2026-10-07 | **Candidate** (rule 2; W41): valid MAJOR line 2026-10-07 |
 | concentration | 0 | — | — |
-| rates-vol | 6 | 2026-10-07 | **Candidate** (rule 1; W40). MAJOR line logged 2026-10-07 |
+| rates-vol | 6 | 2026-10-07 | **Candidate** (rule 1, W40; rule 2, W41: valid MAJOR line 2026-10-07) |
 | equity-vol | 0 | — | — |
 | timing | 0 | — | — |
 | prose | 1 | 2026-09-30 | — |
 | defect | 6 | 2026-10-07 | **Candidate** (rule 1; W40). Two kinds: missed publications Sep 30, Oct 1, Oct 5; evidence consistency Oct 2, Oct 5, Oct 6, Oct 7 |
-| other | 3 | 2026-10-07 | — (3 days; weekly to assess) |
+| other | 3 | 2026-10-07 | **Candidate** (rule 1; W41). Two kinds: no news/catalyst feed Oct 6, Oct 7; crude/DXY not collected Oct 1 |
 
-Candidate design questions: `weekly/2026/2026-W40.md` section 4. For owner review only.
+Candidate design questions: `weekly/2026/2026-W40.md` section 4 (macro-release, rates-vol, defect) and `weekly/2026/2026-W41.md` section 4 (breadth, other). For owner review only. Oct 8 and Oct 9 have no daily file, so no gaps were logged for them; the window counts logged days only.
 
 **Fix status** (recorded so a fixed gap is not treated as open, and a fix is not treated as proven):
 - `macro-release`: FIX IMPLEMENTED — FORWARD VERIFICATION REQUIRED. market-brief PRs #47 (BLS calendar) and #48 (BLS Employment Situation and CPI actuals), merged Oct 2 after the close. First test: CPI, Oct 14. Not covered: BEA (PCE, GDP, trade), ISM, DOL claims.
-- `defect` (missed publications): FIX IMPLEMENTED — FORWARD VERIFICATION REQUIRED. market-brief PR #46 (scheduler liveness), merged Oct 1. Oct 2 published 9 of 9; Oct 5 missed CLOSE_1M (8 of 9); Oct 6 and Oct 7 published 9 of 9.
+- `defect` (missed publications): FIX IMPLEMENTED — FORWARD VERIFICATION REQUIRED. market-brief PR #46 (scheduler liveness), merged Oct 1. Oct 2 published 9 of 9; Oct 5 missed CLOSE_1M (8 of 9); Oct 6, 7, 8 and 9 published 9 of 9 (Oct 8–9 checked by the W41 run from market-brief's publish log).
 
 ## Log
 
