@@ -1,0 +1,77 @@
+name: review
+
+# The Market Review writer. Actions owns the schedule, checkout, validation, commit, push and
+# retries; scripts/review.py calls Claude only to analyse. Phase 2a: shadow entries only.
+# Pause everything (schedules and dispatches) with the Actions variable REVIEW_MODE=off.
+# No artifacts: this repository is public.
+
+on:
+  schedule:
+    - cron: "40 23 * * 1-5"   # main run, 4:40 PM PT (UTC-7 all year from 2026)
+    - cron: "10 4 * * 2-6"    # night pass, 9:10 PM PT: reruns anything missing, adds the lab evaluation
+  workflow_dispatch:
+    inputs:
+      date:
+        description: Session date YYYY-MM-DD (blank = latest NYSE session)
+        default: ""
+      mode:
+        description: Mode (production is phase 2b and is refused until built)
+        type: choice
+        options: [shadow, production]
+        default: shadow
+      force:
+        description: Shadow only, rewrite an existing entry
+        type: boolean
+        default: false
+      inject:
+        description: Test only, inject a failure to prove the run fails closed (never commits)
+        type: choice
+        options: [none, bad-tag, leak]
+        default: none
+
+permissions:
+  contents: write
+
+# A newer run never cancels one that is mid-analysis or mid-push. GitHub keeps only one *pending*
+# run per group, though: dispatch test runs one at a time, or a queued one is replaced.
+concurrency:
+  group: review
+  cancel-in-progress: false
+
+jobs:
+  review:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0   # reruns by date read hypotheses.md as it stood on that session
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      # Pinned to the version the spike's fence was tested on; bump deliberately.
+      - name: Install Claude Code
+        run: npm install -g @anthropic-ai/claude-code@2.1.292
+
+      - name: Write the entry
+        env:
+          CLAUDE_CODE_OAUTH_TOKEN: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
+          REVIEW_MODE: ${{ vars.REVIEW_MODE }}
+          REVIEW_MODEL: ${{ vars.REVIEW_MODEL }}
+          INPUT_DATE: ${{ inputs.date }}
+          INPUT_MODE: ${{ inputs.mode }}
+          INPUT_FORCE: ${{ inputs.force }}
+          INPUT_INJECT: ${{ inputs.inject }}
+        run: |
+          if [ "$REVIEW_MODE" = "off" ]; then
+            mode=off
+          elif [ "$GITHUB_EVENT_NAME" = "workflow_dispatch" ]; then
+            mode="$INPUT_MODE"
+          else
+            mode="${REVIEW_MODE:-shadow}"
+          fi
+          set -- --mode "$mode" --date "$INPUT_DATE" --inject "${INPUT_INJECT:-none}"
+          if [ "$INPUT_FORCE" = "true" ]; then set -- "$@" --force; fi
+          python3 scripts/review.py "$@"
